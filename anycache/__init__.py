@@ -112,9 +112,7 @@ class AnyCache(object):
             """Wrap function `func`."""
 
             def wrapped(*args, **kwargs):
-                maxsize = self.maxsize
-
-                if maxsize == 0:
+                if self.maxsize == 0:
                     result = func(*args, **kwargs)
                 else:
                     funcinfo = _FuncInfo(func, args, kwargs, depfilefunc)
@@ -127,11 +125,11 @@ class AnyCache(object):
     def clear(self):
         """Clear the cache by removing all cache files."""
         cachedir = self.cachedir
+        self._get_debugout()("CLEARING cache")
         if cachedir.exists():
             for file in cachedir.glob("*"):
                 file.unlink()
             cachedir.rmdir()
-        self._get_debugout()("CLEARING cache")
 
     @property
     def size(self):
@@ -143,16 +141,16 @@ class AnyCache(object):
         return size
 
     def _decorate(self, funcinfo, debug):
-        func, args, kwargs, depfilefunc = funcinfo
         debugout = self._get_debugout(debug)
-        self._ensure_cachedir()
-        ident = self._get_ident(func, *args, **kwargs)
+        ident = self._get_ident(funcinfo)
         ce = _CacheInfo.create_ce_from_ident(self.cachedir, ident)
-        # read
+        self._ensure_cachedir()
+        # try to read
         valid, result = AnyCache._read(ce, debugout)
         if valid:
             ce.data.touch()
         else:
+            func, args, kwargs, depfilefunc = funcinfo
             # execute
             result = func(*args, **kwargs)
             # deps
@@ -175,8 +173,9 @@ class AnyCache(object):
         pass
 
     @staticmethod
-    def _get_ident(func, *args, **kwargs):
-        name = "%s.%s(%s, %s)" % (func.__module__, func.__name__, args, kwargs)
+    def _get_ident(fi):
+        func = fi.func
+        name = "%s.%s(%s, %s)" % (func.__module__, func.__name__, fi.args, fi.kwargs)
         h = hashlib.sha256()
         h.update(_bytes(name))
         ident = h.hexdigest()
