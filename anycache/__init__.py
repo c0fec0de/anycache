@@ -26,25 +26,29 @@ else:
     def _bytes(name):
         return bytes(name, encoding='utf-8')
 
+_CACHE_SUFFIX = ".cache"
+_DEP_SUFFIX = ".dep"
+
+
 class _CacheInfo(object):
 
     def __init__(self, cachedir):
-        datafilepaths = cachedir.glob("*%s" % AnyCache._DATA_SUFFIX)
+        datafilepaths = cachedir.glob("*%s" % _CACHE_SUFFIX)
         self.cacheentries = [_CacheInfo.create_ce_from_datafilepath(d) for d in datafilepaths]
         self.cacheentryinfos = [_CacheInfo.create_cei(ce) for ce in self.cacheentries]
         self.totalsize = sum([cei.size for cei in self.cacheentryinfos])
 
     @staticmethod
     def create_ce_from_ident(cachedir, ident):
-        data = cachedir / (ident + AnyCache._DATA_SUFFIX)
-        dep = cachedir / (ident + AnyCache._DEP_SUFFIX)
+        data = cachedir / (ident + _CACHE_SUFFIX)
+        dep = cachedir / (ident + _DEP_SUFFIX)
         return _CacheEntry(ident, data, dep)
 
     @staticmethod
     def create_ce_from_datafilepath(datafilepath):
         ident = datafilepath.name
         data = datafilepath
-        dep = datafilepath.with_suffix(AnyCache._DEP_SUFFIX)
+        dep = datafilepath.with_suffix(_DEP_SUFFIX)
         return _CacheEntry(ident, data, dep)
 
     @staticmethod
@@ -55,9 +59,6 @@ class _CacheInfo(object):
 
 
 class AnyCache(object):
-
-    _DATA_SUFFIX = ".cache"
-    _DEP_SUFFIX = ".dep"
 
     def __init__(self, cachedir=None, maxsize=None, debug=False):
         """
@@ -187,17 +188,23 @@ class AnyCache(object):
 
     @staticmethod
     def _read(ce, debugout):
-        valid, result = False, None
         outdated = True
         if ce.dep.exists() and ce.data.exists():
             data_mtime = ce.data.stat().st_mtime
-            with open(str(ce.dep), "r") as depfile:
-                outdated = any([(pathlib.Path(line.rstrip()).stat().st_mtime > data_mtime)
-                                for line in depfile])
+            try:
+                with open(str(ce.dep), "r") as depfile:
+                    outdated = any([(pathlib.Path(line.rstrip()).stat().st_mtime > data_mtime)
+                                    for line in depfile])
+            except Exception:
+                debugout("CORRUPT cache dep '%s'" % (ce.ident))
+        valid, result = False, None
         if not outdated:
             with open(str(ce.data), "rb") as cachefile:
-                result, valid = pickle.load(cachefile), True
-                debugout("READING cache entry '%s'" % (ce.ident))
+                try:
+                    result, valid = pickle.load(cachefile), True
+                    debugout("READING cache entry '%s'" % (ce.ident))
+                except Exception:
+                    debugout("CORRUPT cache entry '%s'" % (ce.ident))
         return valid, result
 
     @staticmethod

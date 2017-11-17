@@ -1,3 +1,6 @@
+from pathlib import Path
+from tempfile import TemporaryDirectory
+
 from nose.tools import eq_
 
 from anycache import AnyCache
@@ -99,3 +102,42 @@ def test_size():
     eq_(myfunc(4, 2), 6)
     eq_(ac.size,  2 * size1)
     eq_(len(tuple(ac.cachedir.glob("*.cache"))), 2)
+
+def test_corrupt_cache():
+    """Corrupted Cache."""
+    with TemporaryDirectory() as cachedir:
+        cachedir = Path(cachedir)
+        ac = AnyCache(cachedir=cachedir)
+
+    @ac.decorate()
+    def myfunc(posarg, kwarg=3):
+        myfunc.callcount += 1
+        return posarg + kwarg
+    myfunc.callcount = 0
+
+    eq_(myfunc(4, 5), 9)
+    eq_(myfunc.callcount, 1)
+    eq_(myfunc(4, 5), 9)
+    eq_(myfunc.callcount, 1)
+
+    # corrupt cache
+    cachefilepath = list(cachedir.glob("*.cache"))[0]
+    with open(str(cachefilepath), "w") as cachefile:
+        cachefile.write("foo")
+
+    # repair
+    eq_(myfunc(4, 5), 9)
+    eq_(myfunc.callcount, 2)
+    eq_(myfunc(4, 5), 9)
+    eq_(myfunc.callcount, 2)
+
+    # corrupt dep
+    depfilepath = list(cachedir.glob("*.dep"))[0]
+    with open(str(depfilepath), "w") as depfile:
+        depfile.write("foo")
+
+    # repair
+    eq_(myfunc(4, 5), 9)
+    eq_(myfunc.callcount, 3)
+    eq_(myfunc(4, 5), 9)
+    eq_(myfunc.callcount, 3)
