@@ -164,7 +164,7 @@ class AnyCache(object):
 
     def _get_debugout(self, debug=False):
         if self.debug or debug:
-            return logging.getLogger(__name__).warn
+            return logging.getLogger(__name__).debug
         else:
             return AnyCache.__devnull
 
