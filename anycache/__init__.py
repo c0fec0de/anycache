@@ -72,7 +72,7 @@ class AnyCache(object):
             """Wrap function `func`."""
 
             def wrapped(*args, **kwargs):
-                debug = _debug or self.debug
+                debugout = self._get_debugout(_debug)
                 maxsize = self.maxsize
 
                 if maxsize == 0:
@@ -83,8 +83,8 @@ class AnyCache(object):
                     ident = self._get_ident(func, *args, **kwargs)
                     ce = _CacheInfo.create_ce_from_ident(self.cachedir, ident)
                     # read
-                    if not AnyCache._is_outdated(ce, debug):
-                        valid, result = AnyCache._read(ce, debug)
+                    if not AnyCache._is_outdated(ce, debugout):
+                        valid, result = AnyCache._read(ce, debugout)
                     else:
                         valid = False
                     if valid:
@@ -95,10 +95,10 @@ class AnyCache(object):
                         # deps
                         deps = list(depfilefunc(result, *args, **kwargs)) if depfilefunc else []
                         # write
-                        AnyCache._write(ce, func, result, deps, debug)
+                        AnyCache._write(ce, func, result, deps, debugout)
                         # remove old
                         if maxsize is not None:
-                            AnyCache._tidyup(self.cachedir, maxsize, debug)
+                            AnyCache._tidyup(self.cachedir, maxsize, debugout)
                 return result
 
             return wrapped
@@ -111,9 +111,7 @@ class AnyCache(object):
             for file in cachedir.glob("*"):
                 file.unlink()
             cachedir.rmdir()
-        if self.debug:
-            msg = "CLEARING cache"
-            logging.getLogger(__name__).debug(msg)
+        self._get_debugout()("CLEARING cache")
 
     @property
     def size(self):
@@ -123,6 +121,16 @@ class AnyCache(object):
         else:
             size = 0
         return size
+
+    def _get_debugout(self, debug=False):
+        if self.debug or debug:
+            return logging.getLogger(__name__).warn
+        else:
+            return AnyCache.__devnull
+
+    @staticmethod
+    def __devnull(msg):
+        pass
 
     @staticmethod
     def _get_ident(func, *args, **kwargs):
@@ -152,17 +160,13 @@ class AnyCache(object):
         with open(str(ce.data), "rb") as cachefile:
             result = pickle.load(cachefile)
             valid = True
-            if debug:
-                msg = "READING cache entry '%s'" % (ce.ident)
-                logging.getLogger(__name__).debug(msg)
+            debug("READING cache entry '%s'" % (ce.ident))
         return valid, result
 
     @staticmethod
     def _write(ce, func, result, deps, debug):
         with open(str(ce.data), "wb") as cachefile:
-            if debug:
-                msg = "WRITING cache entry '%s'" % (ce.ident)
-                logging.getLogger(__name__).debug(msg)
+            debug("WRITING cache entry '%s'" % (ce.ident))
             pickle.dump(result, cachefile)
         with open(str(ce.dep), "w") as depfile:
             for dep in deps:
@@ -179,9 +183,7 @@ class AnyCache(object):
             totalsize -= oldest.size
             oldest.ce.data.unlink()
             oldest.ce.dep.unlink()
-            if debug:
-                msg = "REMOVING cache entry '%s'" % (oldest.ce.ident)
-                logging.getLogger(__name__).debug(msg)
+            debug("REMOVING cache entry '%s'" % (oldest.ce.ident))
 
 
 _CacheEntry = collections.namedtuple("_CacheEntry", ("ident", "data", "dep"))
