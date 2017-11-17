@@ -166,11 +166,9 @@ class AnyCache(object):
         if self.debug or debug:
             return logging.getLogger(__name__).debug
         else:
-            return AnyCache.__devnull
-
-    @staticmethod
-    def __devnull(msg):
-        pass
+            def null(msg):
+                pass
+            return null
 
     @staticmethod
     def _get_ident(fi):
