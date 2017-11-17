@@ -56,5 +56,10 @@ try:
     from collections import OrderedDict  # noqa
 except ImportError:
     config['install_requires'].append("ordereddict")
+# python 2.x does not implement pathlib, so we have to install it
+try:
+    from pathlib import Path  # noqa
+except ImportError:
+    config['install_requires'].append("pathlib")
 
 setup(**config)
