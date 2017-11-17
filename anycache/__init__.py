@@ -4,6 +4,7 @@ import hashlib
 import inspect
 import logging
 import pathlib
+import sys
 import tempfile
 
 import dill as pickle  # improved pickle
@@ -19,6 +20,11 @@ _CacheEntry = collections.namedtuple("_CacheEntry", ("ident", "data", "dep"))
 _CacheEntryInfo = collections.namedtuple("_CacheEntryInfo", ("ce", "mtime", "size"))
 _FuncInfo = collections.namedtuple("FuncInfo", ("func", "args", "kwargs", "depfilefunc"))
 
+if sys.version_info[0] < 3:
+    _bytes = bytes
+else:
+    def _bytes(name):
+        return bytes(name, encoding='utf-8')
 
 class _CacheInfo(object):
 
@@ -171,7 +177,7 @@ class AnyCache(object):
     def _get_ident(func, *args, **kwargs):
         name = "%s.%s(%s, %s)" % (func.__module__, func.__name__, args, kwargs)
         h = hashlib.sha256()
-        h.update(bytes(name, encoding="utf-8"))
+        h.update(_bytes(name))
         ident = h.hexdigest()
         return ident
 
