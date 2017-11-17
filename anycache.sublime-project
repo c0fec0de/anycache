@@ -1,0 +1,28 @@
+{
+    "folders":
+    [
+        {
+            "path": "."
+        }
+    ],
+    "settings":
+    {
+        "tab_size": 4,
+        "translate_tabs_to_spaces": true,
+        "use_tab_stops": false,
+        "trim_trailing_white_space_on_save": true,
+        "rulers": [79],
+        "ensure_newline_at_eof_on_save": true,
+    },
+    "build_systems":
+    [
+        {
+            "name": "All --with-doctest",
+            "shell_cmd": "(cd $project_path && nosetests --with-doctest); (cd $project_path/docs && make html); (cd $project_path/ && flake8 anycache); (cd $project_path && pep257 anycache --ignore='D100,D101,D105,D211')"
+        },
+        {
+            "name": "All",
+            "shell_cmd": "(cd $project_path && nosetests); (cd $project_path/docs && make html); (cd $project_path/ && flake8 anycache); (cd $project_path && pep257 anycache --ignore='D100,D101,D105,D211')"
+        }
+    ]
+}
