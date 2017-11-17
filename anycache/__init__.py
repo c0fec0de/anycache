@@ -15,6 +15,39 @@ __description__ = """Cache any python object to file using improved pickling .""
 __url__ = "https://github.com/c0fec0de/anycache"
 
 
+_CacheEntry = collections.namedtuple("_CacheEntry", ("ident", "data", "dep"))
+_CacheEntryInfo = collections.namedtuple("_CacheEntryInfo", ("ce", "mtime", "size"))
+_FuncInfo = collections.namedtuple("FuncInfo", ("func", "args", "kwargs", "depfilefunc"))
+
+
+class _CacheInfo(object):
+
+    def __init__(self, cachedir):
+        datafilepaths = cachedir.glob("*%s" % AnyCache._DATA_SUFFIX)
+        self.cacheentries = [_CacheInfo.create_ce_from_datafilepath(d) for d in datafilepaths]
+        self.cacheentryinfos = [_CacheInfo.create_cei(ce) for ce in self.cacheentries]
+        self.totalsize = sum([cei.size for cei in self.cacheentryinfos])
+
+    @staticmethod
+    def create_ce_from_ident(cachedir, ident):
+        data = cachedir / (ident + AnyCache._DATA_SUFFIX)
+        dep = cachedir / (ident + AnyCache._DEP_SUFFIX)
+        return _CacheEntry(ident, data, dep)
+
+    @staticmethod
+    def create_ce_from_datafilepath(datafilepath):
+        ident = datafilepath.name
+        data = datafilepath
+        dep = datafilepath.with_suffix(AnyCache._DEP_SUFFIX)
+        return _CacheEntry(ident, data, dep)
+
+    @staticmethod
+    def create_cei(ce):
+        mtime = ce.data.stat().st_mtime
+        size = ce.data.stat().st_size + ce.dep.stat().st_size
+        return _CacheEntryInfo(ce, mtime, size)
+
+
 class AnyCache(object):
 
     _DATA_SUFFIX = ".cache"
@@ -65,40 +98,20 @@ class AnyCache(object):
         if not self.__explicit_cachedir:
             self.clear()
 
-    def decorate(self, debug=False, depfilefunc=None):
+    def decorate(self, depfilefunc=None, debug=False):
         _debug = debug
 
         def decorator(func):
             """Wrap function `func`."""
 
             def wrapped(*args, **kwargs):
-                debugout = self._get_debugout(_debug)
                 maxsize = self.maxsize
 
                 if maxsize == 0:
-                    # caching is disabled
                     result = func(*args, **kwargs)
                 else:
-                    self._ensure_cachedir()
-                    ident = self._get_ident(func, *args, **kwargs)
-                    ce = _CacheInfo.create_ce_from_ident(self.cachedir, ident)
-                    # read
-                    if not AnyCache._is_outdated(ce, debugout):
-                        valid, result = AnyCache._read(ce, debugout)
-                    else:
-                        valid = False
-                    if valid:
-                        ce.data.touch()
-                    else:
-                        # execute
-                        result = func(*args, **kwargs)
-                        # deps
-                        deps = list(depfilefunc(result, *args, **kwargs)) if depfilefunc else []
-                        # write
-                        AnyCache._write(ce, func, result, deps, debugout)
-                        # remove old
-                        if maxsize is not None:
-                            AnyCache._tidyup(self.cachedir, maxsize, debugout)
+                    funcinfo = _FuncInfo(func, args, kwargs, depfilefunc)
+                    result = self._decorate(funcinfo, _debug)
                 return result
 
             return wrapped
@@ -121,6 +134,32 @@ class AnyCache(object):
         else:
             size = 0
         return size
+
+    def _decorate(self, funcinfo, debug):
+        func, args, kwargs, depfilefunc = funcinfo
+        debugout = self._get_debugout(debug)
+        self._ensure_cachedir()
+        ident = self._get_ident(func, *args, **kwargs)
+        ce = _CacheInfo.create_ce_from_ident(self.cachedir, ident)
+        # read
+        if not AnyCache._is_outdated(ce):
+            valid, result = AnyCache._read(ce, debugout)
+        else:
+            valid = False
+        if valid:
+            ce.data.touch()
+        else:
+            # execute
+            result = func(*args, **kwargs)
+            # deps
+            deps = list(depfilefunc(result, *args, **kwargs)) if depfilefunc else []
+            deps.append(inspect.getfile(func))
+            # write
+            AnyCache._write(ce, result, deps, debugout)
+            # remove old
+            if self.maxsize is not None:
+                AnyCache._tidyup(self.cachedir, self.maxsize, debugout)
+        return result
 
     def _get_debugout(self, debug=False):
         if self.debug or debug:
@@ -145,7 +184,7 @@ class AnyCache(object):
             self.cachedir.mkdir(parents=True)
 
     @staticmethod
-    def _is_outdated(ce, debug):
+    def _is_outdated(ce):
         outdated = True
         if ce.dep.exists() and ce.data.exists():
             data_mtime = ce.data.stat().st_mtime
@@ -155,26 +194,25 @@ class AnyCache(object):
         return outdated
 
     @staticmethod
-    def _read(ce, debug):
+    def _read(ce, debugout):
         valid, result = False, None
         with open(str(ce.data), "rb") as cachefile:
             result = pickle.load(cachefile)
             valid = True
-            debug("READING cache entry '%s'" % (ce.ident))
+            debugout("READING cache entry '%s'" % (ce.ident))
         return valid, result
 
     @staticmethod
-    def _write(ce, func, result, deps, debug):
+    def _write(ce, result, deps, debugout):
         with open(str(ce.data), "wb") as cachefile:
-            debug("WRITING cache entry '%s'" % (ce.ident))
+            debugout("WRITING cache entry '%s'" % (ce.ident))
             pickle.dump(result, cachefile)
         with open(str(ce.dep), "w") as depfile:
             for dep in deps:
                 depfile.write("%s\n" % (dep))
-            depfile.write("%s\n" % (inspect.getfile(func)))
 
     @staticmethod
-    def _tidyup(cachedir, maxsize, debug):
+    def _tidyup(cachedir, maxsize, debugout):
         cacheinfo = _CacheInfo(cachedir)
         totalsize = cacheinfo.totalsize
         ceis = collections.deque(sorted(cacheinfo.cacheentryinfos, key=lambda info: info.mtime))
@@ -183,43 +221,11 @@ class AnyCache(object):
             totalsize -= oldest.size
             oldest.ce.data.unlink()
             oldest.ce.dep.unlink()
-            debug("REMOVING cache entry '%s'" % (oldest.ce.ident))
-
-
-_CacheEntry = collections.namedtuple("_CacheEntry", ("ident", "data", "dep"))
-_CacheEntryInfo = collections.namedtuple("_CacheEntryInfo", ("ce", "mtime", "size"))
-
-
-class _CacheInfo(object):
-
-    def __init__(self, cachedir):
-        datafilepaths = cachedir.glob("*%s" % AnyCache._DATA_SUFFIX)
-        self.cacheentries = [_CacheInfo.create_ce_from_datafilepath(d) for d in datafilepaths]
-        self.cacheentryinfos = [_CacheInfo.create_cei(ce) for ce in self.cacheentries]
-        self.totalsize = sum([cei.size for cei in self.cacheentryinfos])
-
-    @staticmethod
-    def create_ce_from_ident(cachedir, ident):
-        data = cachedir / (ident + AnyCache._DATA_SUFFIX)
-        dep = cachedir / (ident + AnyCache._DEP_SUFFIX)
-        return _CacheEntry(ident, data, dep)
-
-    @staticmethod
-    def create_ce_from_datafilepath(datafilepath):
-        ident = datafilepath.name
-        data = datafilepath
-        dep = datafilepath.with_suffix(AnyCache._DEP_SUFFIX)
-        return _CacheEntry(ident, data, dep)
-
-    @staticmethod
-    def create_cei(ce):
-        mtime = ce.data.stat().st_mtime
-        size = ce.data.stat().st_size + ce.dep.stat().st_size
-        return _CacheEntryInfo(ce, mtime, size)
+            debugout("REMOVING cache entry '%s'" % (oldest.ce.ident))
 
 
 DEFAULT_CACHE = AnyCache()
 
 
-def anycache(debug=False, depfilefunc=None):
-    return DEFAULT_CACHE.decorate(debug=debug, depfilefunc=depfilefunc)
+def anycache(depfilefunc=None, debug=False):
+    return DEFAULT_CACHE.decorate(depfilefunc=depfilefunc, debug=debug)
