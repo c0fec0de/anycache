@@ -7,7 +7,7 @@ from anycache import anycache
 
 
 def test_filedepfunc():
-    """F."""
+    """File dependencies."""
 
     with NamedTemporaryFile("w") as depfile1:
         with NamedTemporaryFile("w") as depfile2:
@@ -38,6 +38,7 @@ def test_filedepfunc():
 
             sleep(3)
             depfilepath1.touch()
+            sleep(3)
 
             eq_(myfunc(4, 5), 9)
             eq_(myfunc.callcount, 3)
@@ -51,6 +52,8 @@ def test_filedepfunc():
 
             sleep(3)
             depfilepath2.touch()
+            sleep(3)
+
             eq_(myfunc(4, 5), 9)
             eq_(myfunc.callcount, 5)
             eq_(myfunc(1, 5), 6)
@@ -59,6 +62,8 @@ def test_filedepfunc():
             # We are touching the source code of 'myfunc'
             sleep(3)
             Path(__file__).touch()
+            sleep(3)
+
             eq_(myfunc(4, 5), 9)
             eq_(myfunc.callcount, 6)
             eq_(myfunc(1, 5), 6)
