@@ -59,7 +59,7 @@ def test_maxsize_value():
     def myfunc(posarg, kwarg=3):
         # count the number of calls
         myfunc.callcount += 1
-        sleep(2)  # wait for slow windows file system
+        sleep(3)  # wait for slow windows file system
         return posarg + kwarg
     myfunc.callcount = 0
 

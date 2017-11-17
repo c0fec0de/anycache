@@ -1,5 +1,5 @@
 from pathlib import Path
-from tempfile import TemporaryDirectory
+from tempfile import mkdtemp
 
 from nose.tools import eq_
 
@@ -105,9 +105,8 @@ def test_size():
 
 def test_corrupt_cache():
     """Corrupted Cache."""
-    with TemporaryDirectory() as cachedir:
-        cachedir = Path(cachedir)
-        ac = AnyCache(cachedir=cachedir)
+    cachedir = Path(mkdtemp())
+    ac = AnyCache(cachedir=cachedir)
 
     @ac.decorate()
     def myfunc(posarg, kwarg=3):
@@ -141,3 +140,5 @@ def test_corrupt_cache():
     eq_(myfunc.callcount, 3)
     eq_(myfunc(4, 5), 9)
     eq_(myfunc.callcount, 3)
+
+    ac.clear()
