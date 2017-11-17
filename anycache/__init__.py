@@ -142,10 +142,7 @@ class AnyCache(object):
         ident = self._get_ident(func, *args, **kwargs)
         ce = _CacheInfo.create_ce_from_ident(self.cachedir, ident)
         # read
-        if not AnyCache._is_outdated(ce):
-            valid, result = AnyCache._read(ce, debugout)
-        else:
-            valid = False
+        valid, result = AnyCache._read(ce, debugout)
         if valid:
             ce.data.touch()
         else:
@@ -157,8 +154,7 @@ class AnyCache(object):
             # write
             AnyCache._write(ce, result, deps, debugout)
             # remove old
-            if self.maxsize is not None:
-                AnyCache._tidyup(self.cachedir, self.maxsize, debugout)
+            AnyCache._tidyup(self.cachedir, self.maxsize, debugout)
         return result
 
     def _get_debugout(self, debug=False):
@@ -184,22 +180,18 @@ class AnyCache(object):
             self.cachedir.mkdir(parents=True)
 
     @staticmethod
-    def _is_outdated(ce):
+    def _read(ce, debugout):
+        valid, result = False, None
         outdated = True
         if ce.dep.exists() and ce.data.exists():
             data_mtime = ce.data.stat().st_mtime
             with open(str(ce.dep), "r") as depfile:
                 outdated = any([(pathlib.Path(line.rstrip()).stat().st_mtime > data_mtime)
                                 for line in depfile])
-        return outdated
-
-    @staticmethod
-    def _read(ce, debugout):
-        valid, result = False, None
-        with open(str(ce.data), "rb") as cachefile:
-            result = pickle.load(cachefile)
-            valid = True
-            debugout("READING cache entry '%s'" % (ce.ident))
+        if not outdated:
+            with open(str(ce.data), "rb") as cachefile:
+                result, valid = pickle.load(cachefile), True
+                debugout("READING cache entry '%s'" % (ce.ident))
         return valid, result
 
     @staticmethod
@@ -213,15 +205,16 @@ class AnyCache(object):
 
     @staticmethod
     def _tidyup(cachedir, maxsize, debugout):
-        cacheinfo = _CacheInfo(cachedir)
-        totalsize = cacheinfo.totalsize
-        ceis = collections.deque(sorted(cacheinfo.cacheentryinfos, key=lambda info: info.mtime))
-        while (totalsize > maxsize) and (len(ceis) > 2):
-            oldest = ceis.popleft()
-            totalsize -= oldest.size
-            oldest.ce.data.unlink()
-            oldest.ce.dep.unlink()
-            debugout("REMOVING cache entry '%s'" % (oldest.ce.ident))
+        if maxsize is not None:
+            cacheinfo = _CacheInfo(cachedir)
+            totalsize = cacheinfo.totalsize
+            ceis = collections.deque(sorted(cacheinfo.cacheentryinfos, key=lambda info: info.mtime))
+            while (totalsize > maxsize) and (len(ceis) > 2):
+                oldest = ceis.popleft()
+                totalsize -= oldest.size
+                oldest.ce.data.unlink()
+                oldest.ce.dep.unlink()
+                debugout("REMOVING cache entry '%s'" % (oldest.ce.ident))
 
 
 DEFAULT_CACHE = AnyCache()
