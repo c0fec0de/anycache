@@ -1,0 +1,10 @@
+*.egg-info/
+*.eggs/
+*.pyc
+*.sublime-workspace
+.coverage
+.tox/
+__pycache__
+coverage-report/
+dist/
+docs/build/
