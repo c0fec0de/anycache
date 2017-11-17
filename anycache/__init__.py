@@ -186,7 +186,7 @@ class AnyCache(object):
             self.cachedir.mkdir(parents=True)
 
     @staticmethod
-    def _read(ce, debugout):
+    def _is_outdated(ce, debugout):
         outdated = True
         if ce.dep.exists() and ce.data.exists():
             data_mtime = ce.data.stat().st_mtime
@@ -196,8 +196,13 @@ class AnyCache(object):
                                     for line in depfile])
             except Exception:
                 debugout("CORRUPT cache dep '%s'" % (ce.ident))
+        return outdated
+
+
+    @staticmethod
+    def _read(ce, debugout):
         valid, result = False, None
-        if not outdated:
+        if not AnyCache._is_outdated(ce, debugout):
             with open(str(ce.data), "rb") as cachefile:
                 try:
                     result, valid = pickle.load(cachefile), True
