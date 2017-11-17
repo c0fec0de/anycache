@@ -20,7 +20,7 @@ _CacheEntry = collections.namedtuple("_CacheEntry", ("ident", "data", "dep"))
 _CacheEntryInfo = collections.namedtuple("_CacheEntryInfo", ("ce", "mtime", "size"))
 _FuncInfo = collections.namedtuple("FuncInfo", ("func", "args", "kwargs", "depfilefunc"))
 
-if sys.version_info[0] < 3:
+if sys.version_info[0] < 3:  # pragma: no cover
     _bytes = bytes
 else:
     def _bytes(name):
