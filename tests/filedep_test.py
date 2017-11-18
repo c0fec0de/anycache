@@ -58,13 +58,3 @@ def test_filedepfunc():
             eq_(myfunc.callcount, 5)
             eq_(myfunc(1, 5), 6)
             eq_(myfunc.callcount, 5)
-
-            # We are touching the source code of 'myfunc'
-            sleep(3)
-            Path(__file__).touch()
-            sleep(3)
-
-            eq_(myfunc(4, 5), 9)
-            eq_(myfunc.callcount, 6)
-            eq_(myfunc(1, 5), 6)
-            eq_(myfunc.callcount, 7)

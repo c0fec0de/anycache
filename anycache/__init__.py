@@ -74,7 +74,7 @@ class AnyCache(object):
                      object, this object is kept.
                      During object write the cache size might be larger than
                      `maxsize`. At maximum twice as large as the maximum object
-                      size.
+                     size.
             debug: Send detailed cache read/write information to :any:`logging`.
         """
         self.cachedir = cachedir
@@ -154,8 +154,7 @@ class AnyCache(object):
             # execute
             result = func(*args, **kwargs)
             # deps
-            deps = list(depfilefunc(result, *args, **kwargs)) if depfilefunc else []
-            deps.append(inspect.getfile(func))
+            deps = tuple(depfilefunc(result, *args, **kwargs)) if depfilefunc else []
             # write
             AnyCache._write(ce, result, deps, debugout)
             # remove old
