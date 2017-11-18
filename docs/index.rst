@@ -36,7 +36,6 @@ Cache any python object to file using improved pickling
    :maxdepth: 2
 
    installation
-   intro
    api
 
 
