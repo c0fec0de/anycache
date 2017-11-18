@@ -9,7 +9,7 @@ def test_maxsize_0():
     """Disable Caching."""
     ac = AnyCache(maxsize=0)
 
-    @ac.decorate()
+    @ac.anycache()
     def myfunc(posarg, kwarg=3):
         # count the number of calls
         myfunc.callcount += 1
@@ -29,7 +29,7 @@ def test_maxsize_none():
     """Unlimited Caching."""
     ac = AnyCache(maxsize=None)
 
-    @ac.decorate()
+    @ac.anycache()
     def myfunc(posarg, kwarg=3):
         # count the number of calls
         myfunc.callcount += 1
@@ -55,7 +55,7 @@ def test_maxsize_value():
     """Limited Caching."""
     ac = AnyCache(maxsize=None, debug=True)
 
-    @ac.decorate()
+    @ac.anycache()
     def myfunc(posarg, kwarg=3):
         # count the number of calls
         myfunc.callcount += 1

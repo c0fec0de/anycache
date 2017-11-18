@@ -11,7 +11,7 @@ def test_persistent():
     cachedir = Path(mkdtemp())
     ac = AnyCache(cachedir=cachedir)
 
-    @ac.decorate()
+    @ac.anycache()
     def myfunc(posarg, kwarg=3):
         # count the number of calls
         myfunc.callcount += 1
@@ -30,7 +30,7 @@ def test_persistent():
 
     ac = AnyCache(cachedir=cachedir)
 
-    @ac.decorate()
+    @ac.anycache()
     def myfunc(posarg, kwarg=3):
         # count the number of calls
         myfunc.callcount += 1

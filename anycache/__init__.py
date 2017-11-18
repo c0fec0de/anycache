@@ -1,7 +1,7 @@
 """Cache any python object to file."""
+
 import collections
 import hashlib
-import inspect
 import logging
 import pathlib
 import sys
@@ -76,6 +76,45 @@ class AnyCache(object):
                      `maxsize`. At maximum twice as large as the maximum object
                      size.
             debug: Send detailed cache read/write information to :any:`logging`.
+
+        The :any:`AnyCache` instance mainly serves the :any:`AnyCache.anycache`
+        method for caching the result of functions.
+
+        >>> from anycache import AnyCache
+        >>> ac = AnyCache()
+        >>> @ac.anycache()
+        ... def myfunc(posarg, kwarg=3):
+        ...     print("  Calcing %r + %r = %r" % (posarg, kwarg, posarg + kwarg))
+        ...     return posarg + kwarg
+        >>> myfunc(4, 5)
+          Calcing 4 + 5 = 9
+        9
+        >>> myfunc(4, 5)
+        9
+        >>> myfunc(4, 2)
+          Calcing 4 + 2 = 6
+        6
+
+        The cache size is returned by :any:`AnyCache.size`.
+
+        >>> ac.size
+        10
+
+        The cache size can be limited via `maxsize`.
+        A `maxsize` of `0` disables caching.
+
+        >>> ac.maxsize = 0
+        >>> myfunc(4, 5)
+          Calcing 4 + 5 = 9
+        9
+
+        The cache is preserved in this case, and needs to be cleared explicitly:
+
+        >>> ac.size
+        10
+        >>> ac.clear()
+        >>> ac.size
+        0
         """
         self.cachedir = cachedir
         self.maxsize = maxsize
@@ -105,18 +144,54 @@ class AnyCache(object):
         if not self.__explicit_cachedir:
             self.clear()
 
-    def decorate(self, depfilefunc=None, debug=False):
+    def anycache(self, depfilefunc=None, debug=False):
+        """
+        Decorator to cache result of function depending on arguments.
+
+        Keyword Args:
+            depfilefunc: Dependency file function (see example below)
+            debug (bool): Send detailed cache read/write information to :any:`logging`.
+
+        >>> from anycache import AnyCache
+        >>> ac = AnyCache()
+        >>> @ac.anycache()
+        ... def myfunc(posarg, kwarg=3):
+        ...     print("  Calcing %r + %r = %r" % (posarg, kwarg, posarg + kwarg))
+        ...     return posarg + kwarg
+        >>> myfunc(2, 5)
+          Calcing 2 + 5 = 7
+        7
+        >>> myfunc(2, 5)
+        7
+
+        File I/O is not tracked by the decorator.
+        Instead a function needs to be implemented, which returns the paths
+        of the files, which influence the function result.
+        The `depfilefunc` is called with the function result and all arguments.
+        The following example, depends on the path of the source code itself:
+
+        >>> def mydepfilefunc(result, posarg, kwarg=3):
+        ...     print("  Deps of %r + %r = %r" % (posarg, kwarg, result))
+        ...     return [__file__]
+        >>> @ac.anycache(depfilefunc=mydepfilefunc)
+        ... def myfunc(posarg, kwarg=3):
+        ...     print("  Calcing %r + %r = %r" % (posarg, kwarg, posarg + kwarg))
+        ...     return posarg + kwarg
+        >>> myfunc(2, 7)
+          Calcing 2 + 7 = 9
+          Deps of 2 + 7 = 9
+        9
+        """
         _debug = debug
 
         def decorator(func):
-            """Wrap function `func`."""
 
             def wrapped(*args, **kwargs):
                 if self.maxsize == 0:
                     result = func(*args, **kwargs)
                 else:
                     funcinfo = _FuncInfo(func, args, kwargs, depfilefunc)
-                    result = self._decorate(funcinfo, _debug)
+                    result = self._anycache(funcinfo, _debug)
                 return result
 
             return wrapped
@@ -140,7 +215,7 @@ class AnyCache(object):
             size = 0
         return size
 
-    def _decorate(self, funcinfo, debug):
+    def _anycache(self, funcinfo, debug):
         debugout = self._get_debugout(debug)
         ident = self._get_ident(funcinfo)
         ce = _CacheInfo.create_ce_from_ident(self.cachedir, ident)
@@ -195,7 +270,6 @@ class AnyCache(object):
                 debugout("CORRUPT cache dep '%s'" % (ce.ident))
         return outdated
 
-
     @staticmethod
     def _read(ce, debugout):
         valid, result = False, None
@@ -235,4 +309,47 @@ DEFAULT_CACHE = AnyCache()
 
 
 def anycache(depfilefunc=None, debug=False):
-    return DEFAULT_CACHE.decorate(depfilefunc=depfilefunc, debug=debug)
+    """
+    Decorator to cache result of function depending on arguments.
+
+    This decorator uses one unlimited global cache within one python run.
+    Different anycached functions have different cache name spaces and do
+    not influence each other.
+
+    To preserve the cache result between multiple python runs, use
+    an :any:`AnyCache` instance with a persistent `cachedir`.
+
+    Keyword Args:
+        depfilefunc: Dependency file function (see example below)
+        debug (bool): Send detailed cache read/write information to :any:`logging`.
+
+    >>> from anycache import anycache
+    >>> @anycache()
+    ... def myfunc(posarg, kwarg=3):
+    ...     print("  Calcing %r + %r = %r" % (posarg, kwarg, posarg + kwarg))
+    ...     return posarg + kwarg
+    >>> myfunc(2, 5)
+      Calcing 2 + 5 = 7
+    7
+    >>> myfunc(2, 5)
+    7
+
+    File I/O is not tracked by the decorator.
+    Instead a function needs to be implemented, which returns the paths
+    of the files, which influence the function result.
+    The `depfilefunc` is called with the function result and all arguments.
+    The following example, depends on the path of the source code itself:
+
+    >>> def mydepfilefunc(result, posarg, kwarg=3):
+    ...     print("  Deps of %r + %r = %r" % (posarg, kwarg, result))
+    ...     return [__file__]
+    >>> @anycache(depfilefunc=mydepfilefunc)
+    ... def myfunc(posarg, kwarg=3):
+    ...     print("  Calcing %r + %r = %r" % (posarg, kwarg, posarg + kwarg))
+    ...     return posarg + kwarg
+    >>> myfunc(2, 7)
+      Calcing 2 + 7 = 9
+      Deps of 2 + 7 = 9
+    9
+    """
+    return DEFAULT_CACHE.anycache(depfilefunc=depfilefunc, debug=debug)
