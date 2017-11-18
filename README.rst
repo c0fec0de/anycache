@@ -53,7 +53,7 @@ To cache the result of a function, use the global unlimited anycache:
 13
 
 To preserve the result between multiple python runs, a persistent cache
-directory needs to be set at a central :any:`AnyCache` instance.
+directory needs to be set at a central `AnyCache` instance.
 
 >>> from anycache import AnyCache
 >>> ac = AnyCache(cachedir='/tmp/anycache.my')
