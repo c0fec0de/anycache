@@ -39,9 +39,27 @@ Getting started
 
 .. _getting_started:
 
-TODO
+To cache the result of a function, use the global unlimited anycache:
 
+>>> from anycache import anycache
+>>> @anycache()
+... def myfunc(posarg, kwarg=3):
+...     print("  Calcing %r + %r = %r" % (posarg, kwarg, posarg + kwarg))
+...     return posarg + kwarg
+>>> myfunc(8, 5)
+  Calcing 8 + 5 = 13
+13
+>>> myfunc(8, 5)
+13
 
+To preserve the result between multiple python runs, a persistent cache
+directory needs to be set at a central :any:`AnyCache` instance.
+
+>>> from anycache import AnyCache
+>>> ac = AnyCache(cachedir='/tmp/anycache.my')
+>>> @ac.anycache()
+... def myfunc(posarg, kwarg=3):
+...     return posarg + kwarg
 
 Installation
 ============

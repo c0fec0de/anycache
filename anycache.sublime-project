@@ -18,7 +18,7 @@
     [
         {
             "name": "All --with-doctest",
-            "shell_cmd": "(cd $project_path && nosetests --with-doctest); (cd $project_path/docs && make html); (cd $project_path/ && flake8 anycache); (cd $project_path && pep257 anycache --ignore='D100,D101,D105,D211')"
+            "shell_cmd": "(cd $project_path && nosetests --with-doctest); (cd $project_path/docs && make html); (cd $project_path/ && flake8 anycache); (cd $project_path && pep257 anycache --ignore='D100,D101,D105,D211'); (cd $project_path && python -m doctest README.rst docs/*.rst)"
         },
         {
             "name": "All",

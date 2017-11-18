@@ -18,8 +18,6 @@ def test_basic():
         return posarg + kwarg
     myfunc.callcount = 0
 
-    eq_(DEFAULT_CACHE.size, 0)
-
     eq_(myfunc(4, 5), 9)
     eq_(myfunc.callcount, 1)
     eq_(myfunc(4, 5), 9)
@@ -37,7 +35,7 @@ def test_basic():
 def test_del():
     ac = AnyCache()
 
-    @ac.decorate()
+    @ac.anycache()
     def myfunc(posarg, kwarg=3):
         return posarg + kwarg
 
@@ -53,7 +51,7 @@ def test_cleanup():
     ac = AnyCache()
     cachedir = ac.cachedir
 
-    @ac.decorate()
+    @ac.anycache()
     def myfunc(posarg, kwarg=3):
         # count the number of calls
         myfunc.callcount += 1
@@ -90,7 +88,7 @@ def test_size():
     """Size."""
     ac = AnyCache()
 
-    @ac.decorate()
+    @ac.anycache()
     def myfunc(posarg, kwarg=3):
         return posarg + kwarg
 
@@ -108,7 +106,7 @@ def test_corrupt_cache():
     cachedir = Path(mkdtemp())
     ac = AnyCache(cachedir=cachedir)
 
-    @ac.decorate()
+    @ac.anycache()
     def myfunc(posarg, kwarg=3):
         myfunc.callcount += 1
         return posarg + kwarg
