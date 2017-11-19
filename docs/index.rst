@@ -51,10 +51,10 @@ To cache the result of a function, use the global unlimited anycache:
 ... def myfunc(posarg, kwarg=3):
 ...     print("  Calcing %r + %r = %r" % (posarg, kwarg, posarg + kwarg))
 ...     return posarg + kwarg
->>> myfunc(8, 5)
-  Calcing 8 + 5 = 13
+>>> myfunc(8, 10)
+  Calcing 8 + 10 = 18
 13
->>> myfunc(8, 5)
+>>> myfunc(8, 10)
 13
 
 To preserve the result between multiple python runs, a persistent cache
