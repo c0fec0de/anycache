@@ -11,8 +11,8 @@ Cache Any Python Object
 .. image:: https://coveralls.io/repos/github/c0fec0de/anycache/badge.svg
     :target: https://coveralls.io/github/c0fec0de/anycache
 
-.. image:: https://readthedocs.org/projects/anycache/badge/?version=1.0.dev1
-    :target: http://anycache.readthedocs.io/en/1.0.dev1/?badge=1.0.dev1
+.. image:: https://readthedocs.org/projects/anycache/badge/?version=1.1.0
+    :target: http://anycache.readthedocs.io/en/1.1.0/?badge=1.1.0
 
 .. image:: https://codeclimate.com/github/c0fec0de/anycache.png
     :target: https://codeclimate.com/github/c0fec0de/anycache
