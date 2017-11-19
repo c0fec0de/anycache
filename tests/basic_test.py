@@ -140,3 +140,27 @@ def test_corrupt_cache():
     eq_(myfunc.callcount, 3)
 
     ac.clear()
+
+
+def class_test():
+    class MyClass(object):
+        def __init__(self, posarg, kwarg=3):
+            super(object, self).__init__()
+            self.posarg = posarg
+            self.kwarg = kwarg
+
+        @anycache()
+        def func(self, foo):
+            return self.posarg + self.kwarg + foo
+
+
+    a = MyClass(2, 4)
+    b = MyClass(1, 3)
+
+    eq_(a.func(6), 12)
+    eq_(a.func(6), 12)
+
+    eq_(b.func(6), 10)
+    eq_(b.func(6), 10)
+    eq_(a.func(6), 12)
+
