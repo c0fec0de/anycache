@@ -171,7 +171,6 @@ def class_test():
     class MyClass(object):
 
         def __init__(self, posarg, kwarg=3):
-            super(object, self).__init__()
             self.posarg = posarg
             self.kwarg = kwarg
 
