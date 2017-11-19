@@ -9,7 +9,7 @@ import tempfile
 
 import dill as pickle  # improved pickle
 
-__version__ = "1.1.0"
+__version__ = "1.1.1"
 __author__ = "c0fec0de"
 __author_email__ = "c0fec0de@gmail.com"
 __description__ = """Cache any python object to file using improved pickling ."""
