@@ -53,9 +53,9 @@ To cache the result of a function, use the global unlimited anycache:
 ...     return posarg + kwarg
 >>> myfunc(8, 10)
   Calcing 8 + 10 = 18
-13
+18
 >>> myfunc(8, 10)
-13
+18
 
 To preserve the result between multiple python runs, a persistent cache
 directory needs to be set at a central :any:`AnyCache` instance.
