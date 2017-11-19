@@ -57,6 +57,9 @@ To cache the result of a function, use the global unlimited anycache:
 >>> myfunc(8, 10)
 18
 
+`anycache` caches nearly any python object. Also `lambda` statements.
+It uses Dill_ as backend. An improved version of pythons build-in `pickle`.
+
 To preserve the result between multiple python runs, a persistent cache
 directory needs to be set at a central :any:`AnyCache` instance.
 
@@ -65,3 +68,5 @@ directory needs to be set at a central :any:`AnyCache` instance.
 >>> @ac.anycache()
 ... def myfunc(posarg, kwarg=3):
 ...     return posarg + kwarg
+
+.. _Dill: https://pypi.python.org/pypi/dill
