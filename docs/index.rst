@@ -61,12 +61,14 @@ To cache the result of a function, use the global unlimited anycache:
 It uses Dill_ as backend. An improved version of pythons build-in `pickle`.
 
 To preserve the result between multiple python runs, a persistent cache
-directory needs to be set at a central :any:`AnyCache` instance.
+directory needs to be set.
 
->>> from anycache import AnyCache
->>> ac = AnyCache(cachedir='/tmp/anycache.my')
->>> @ac.anycache()
+>>> from anycache import anycache
+>>> @anycache(cachedir='/tmp/anycache.my')
 ... def myfunc(posarg, kwarg=3):
 ...     return posarg + kwarg
+
+The :any:`AnyCache` object serves additional functions for cache clearing and
+size handling.
 
 .. _Dill: https://pypi.python.org/pypi/dill

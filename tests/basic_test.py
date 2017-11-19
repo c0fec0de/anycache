@@ -101,6 +101,7 @@ def test_size():
     eq_(ac.size,  2 * size1)
     eq_(len(tuple(ac.cachedir.glob("*.cache"))), 2)
 
+
 def test_corrupt_cache():
     """Corrupted Cache."""
     cachedir = Path(mkdtemp())
@@ -142,8 +143,33 @@ def test_corrupt_cache():
     ac.clear()
 
 
+def test_cachedir():
+    """Corrupted Cache."""
+    cachedir = Path(mkdtemp())
+    @anycache(cachedir=cachedir)
+    def myfunc(posarg, kwarg=3):
+        myfunc.callcount += 1
+        return posarg + kwarg
+    myfunc.callcount = 0
+
+    eq_(myfunc(4, 5), 9)
+    eq_(myfunc.callcount, 1)
+    eq_(myfunc(4, 5), 9)
+    eq_(myfunc.callcount, 1)
+
+    @anycache(cachedir=cachedir)
+    def myfunc(posarg, kwarg=3):
+        myfunc.callcount += 1
+        return posarg + kwarg
+    myfunc.callcount = 0
+
+    eq_(myfunc(4, 5), 9)
+    eq_(myfunc.callcount, 0)
+
+
 def class_test():
     class MyClass(object):
+
         def __init__(self, posarg, kwarg=3):
             super(object, self).__init__()
             self.posarg = posarg
@@ -152,7 +178,6 @@ def class_test():
         @anycache()
         def func(self, foo):
             return self.posarg + self.kwarg + foo
-
 
     a = MyClass(2, 4)
     b = MyClass(1, 3)
@@ -163,4 +188,3 @@ def class_test():
     eq_(b.func(6), 10)
     eq_(b.func(6), 10)
     eq_(a.func(6), 12)
-

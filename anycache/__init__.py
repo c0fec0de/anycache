@@ -308,7 +308,7 @@ class AnyCache(object):
 DEFAULT_CACHE = AnyCache()
 
 
-def anycache(depfilefunc=None, debug=False):
+def anycache(depfilefunc=None, debug=False, cachedir=None, maxsize=None):
     """
     Decorator to cache result of function depending on arguments.
 
@@ -322,6 +322,16 @@ def anycache(depfilefunc=None, debug=False):
     Keyword Args:
         depfilefunc: Dependency file function (see example below)
         debug (bool): Send detailed cache read/write information to :any:`logging`.
+        cachedir: Directory for cached python objects. :any:`AnyCache`
+                  instances on the same `cachedir` share the same cache.
+        maxsize: Maximum cache size in bytes.
+                 `None` does not limit the cache size.
+                 `0` disables caching.
+                 It the maximum size is smaller than the last cached
+                 object, this object is kept.
+                 During object write the cache size might be larger than
+                 `maxsize`. At maximum twice as large as the maximum object
+                 size.
 
     >>> from anycache import anycache
     >>> @anycache()
@@ -352,4 +362,8 @@ def anycache(depfilefunc=None, debug=False):
       Deps of 2 + 7 = 9
     9
     """
-    return DEFAULT_CACHE.anycache(depfilefunc=depfilefunc, debug=debug)
+    if (cachedir is not None) or (maxsize is not None):
+        ac = AnyCache(cachedir=cachedir, maxsize=maxsize)
+    else:
+        ac = DEFAULT_CACHE
+    return ac.anycache(depfilefunc=depfilefunc, debug=debug)
