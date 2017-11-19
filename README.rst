@@ -7,8 +7,8 @@
 .. image:: https://coveralls.io/repos/github/c0fec0de/anycache/badge.svg
     :target: https://coveralls.io/github/c0fec0de/anycache
 
-.. image:: https://readthedocs.org/projects/anycache/badge/?version=1.0.dev1
-    :target: http://anycache.readthedocs.io/en/1.0.dev1/?badge=1.0.dev1
+.. image:: https://readthedocs.org/projects/anycache/badge/?version=1.1.0
+    :target: http://anycache.readthedocs.io/en/1.1.0/?badge=1.1.0
 
 .. image:: https://codeclimate.com/github/c0fec0de/anycache.png
     :target: https://codeclimate.com/github/c0fec0de/anycache
@@ -30,9 +30,9 @@ Cache any python object to file using improved pickling
 Documentation
 =============
 
-The Documentation_ is hosted on http://anycache.readthedocs.io/en/1.0.dev1/
+The Documentation_ is hosted on http://anycache.readthedocs.io/en/1.1.0/
 
-.. _Documentation: http://anycache.readthedocs.io/en/1.0.dev1/
+.. _Documentation: http://anycache.readthedocs.io/en/1.1.0/
 
 Getting started
 ===============
