@@ -18,7 +18,7 @@ import os
 
 
 name = "anycache"
-version = "1.1.1"
+version = "2.0.0"
 author = 'c0fec0de'
 description = "Cache Any Python Object"
 
