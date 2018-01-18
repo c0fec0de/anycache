@@ -387,19 +387,22 @@ class AnyCache(object):
         logger.info("WRITING cache entry '%s'" % (ce.ident))
         # we need to lock the cache for write
         # writing takes a long time, so we are writing to temporay files, lock and copy over.
-        with tempfile.NamedTemporaryFile("wb", prefix="anycache-", suffix=_CACHE_SUFFIX) as datatmpfile:
-            with tempfile.NamedTemporaryFile("w", prefix="anycache-", suffix=_DEP_SUFFIX) as deptmpfile:
-                # data
-                pickle.dump(result, datatmpfile)
-                datatmpfile.flush()
-                # dep
-                for dep in deps:
-                    deptmpfile.write("%s\n" % (dep))
-                deptmpfile.flush()
-                # copy over
-                with ce.lock:
-                    shutil.copyfile(datatmpfile.name, str(ce.data))
-                    shutil.copyfile(deptmpfile.name, str(ce.dep))
+        try:
+            with tempfile.NamedTemporaryFile("wb", prefix="anycache-", suffix=_CACHE_SUFFIX) as datatmpfile:
+                with tempfile.NamedTemporaryFile("w", prefix="anycache-", suffix=_DEP_SUFFIX) as deptmpfile:
+                    # data
+                    pickle.dump(result, datatmpfile)
+                    datatmpfile.flush()
+                    # dep
+                    for dep in deps:
+                        deptmpfile.write("%s\n" % (dep))
+                    deptmpfile.flush()
+                    # copy over
+                    with ce.lock:
+                        shutil.copyfile(datatmpfile.name, str(ce.data))
+                        shutil.copyfile(deptmpfile.name, str(ce.dep))
+        except Exception as exc:
+            logger.warn("FAILED cache write '%s'" % (ce.ident))
 
     @staticmethod
     def __tidyup(logger, cachedir, maxsize):
