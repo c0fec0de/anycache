@@ -272,14 +272,14 @@ class AnyCache(object):
                 with open(str(ce.data), "rb") as cachefile:
                     try:
                         result, valid = pickle.load(cachefile), True
-                        logger.debug("READING cache entry '%s'" % (ce.ident))
+                        logger.info("READING cache entry '%s'" % (ce.ident))
                     except Exception as exc:
                         logger.warn("CORRUPT cache entry '%s'. %r" % (ce.data, exc))
         return valid, result
 
     @staticmethod
     def __write(logger, ce, result, deps):
-        logger.debug("WRITING cache entry '%s'" % (ce.ident))
+        logger.info("WRITING cache entry '%s'" % (ce.ident))
         # we need to lock the cache for write
         # writing takes a long time, so we are writing to temporay files, lock and copy over.
         with tempfile.NamedTemporaryFile("wb", prefix="anycache-", suffix=_CACHE_SUFFIX) as datatmpfile:
@@ -308,10 +308,10 @@ class AnyCache(object):
                 with oldest.ce.lock:
                     oldest.ce.data.unlink()
                     oldest.ce.dep.unlink()
-                logger.debug("REMOVING cache entry '%s'" % (oldest.ce.ident))
+                logger.info("REMOVING cache entry '%s'" % (oldest.ce.ident))
 
 
-DEFAULT_CACHE = None
+__DEFAULT_CACHE = None
 
 
 def anycache(cachedir=None, maxsize=None, depfilefunc=None):
