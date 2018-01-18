@@ -22,7 +22,7 @@ def test_filedepfunc():
                     deps.append(depfile2.name)
                 return deps
 
-            @anycache(debug=True, depfilefunc=depfilefunc)
+            @anycache(depfilefunc=depfilefunc)
             def myfunc(posarg, kwarg=3):
                 # count the number of calls
                 myfunc.callcount += 1

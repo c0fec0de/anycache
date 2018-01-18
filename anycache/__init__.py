@@ -67,7 +67,7 @@ class _CacheInfo(object):
 
 class AnyCache(object):
 
-    def __init__(self, cachedir=None, maxsize=None, debug=False):
+    def __init__(self, cachedir=None, maxsize=None):
         """
         Cache for python objects.
 
@@ -82,7 +82,6 @@ class AnyCache(object):
                      During object write the cache size might be larger than
                      `maxsize`. At maximum twice as large as the maximum object
                      size.
-            debug: Send detailed cache read/write information to :any:`logging`.
 
         The :any:`AnyCache` instance mainly serves the :any:`AnyCache.anycache`
         method for caching the result of functions.
@@ -125,7 +124,6 @@ class AnyCache(object):
         """
         self.cachedir = cachedir
         self.maxsize = maxsize
-        self.debug = debug
 
     @property
     def cachedir(self):
@@ -151,13 +149,12 @@ class AnyCache(object):
         if not self.__explicit_cachedir:
             self.clear()
 
-    def anycache(self, depfilefunc=None, debug=False):
+    def anycache(self, depfilefunc=None):
         """
         Decorator to cache result of function depending on arguments.
 
         Keyword Args:
             depfilefunc: Dependency file function (see example below)
-            debug (bool): Send detailed cache read/write information to :any:`logging`.
 
         >>> from anycache import AnyCache
         >>> ac = AnyCache()
@@ -189,8 +186,6 @@ class AnyCache(object):
           Deps of 2 + 7 = 9
         9
         """
-        _debug = debug
-
         def decorator(func):
 
             def wrapped(*args, **kwargs):
@@ -198,7 +193,7 @@ class AnyCache(object):
                     result = func(*args, **kwargs)
                 else:
                     funcinfo = _FuncInfo(func, args, kwargs, depfilefunc)
-                    result = self._anycache(funcinfo, _debug)
+                    result = self._anycache(funcinfo)
                 return result
 
             return wrapped
@@ -208,7 +203,7 @@ class AnyCache(object):
         """Clear the cache by removing all cache files."""
         cachedir = self.__cachedir
         if cachedir and cachedir.exists():
-            self._get_debugout()("CLEARING cache '%s" % cachedir)
+            logging.getLogger(__name__).debug("CLEARING cache '%s" % cachedir)
             for file in cachedir.glob("*"):
                 file.unlink()
             cachedir.rmdir()
@@ -222,13 +217,13 @@ class AnyCache(object):
             size = 0
         return size
 
-    def _anycache(self, funcinfo, debug):
-        debugout = self._get_debugout(debug)
+    def _anycache(self, funcinfo):
+        logger = logging.getLogger(__name__)
         ident = self._get_ident(funcinfo)
         ce = _CacheInfo.create_ce_from_ident(self.cachedir, ident)
         self._ensure_cachedir()
         # try to read
-        valid, result = AnyCache._read(ce, debugout)
+        valid, result = AnyCache.__read(logger, ce)
         if valid:
             ce.data.touch()
         else:
@@ -238,18 +233,10 @@ class AnyCache(object):
             # deps
             deps = tuple(depfilefunc(result, *args, **kwargs)) if depfilefunc else []
             # write
-            AnyCache._write(ce, result, deps, debugout)
+            AnyCache.__write(logger, ce, result, deps)
             # remove old
-            AnyCache._tidyup(self.cachedir, self.maxsize, debugout)
+            AnyCache.__tidyup(logger, self.cachedir, self.maxsize)
         return result
-
-    def _get_debugout(self, debug=False):
-        if self.debug or debug:
-            return logging.getLogger(__name__).debug
-        else:
-            def null(msg):
-                pass
-            return null
 
     @staticmethod
     def _get_ident(fi):
@@ -265,7 +252,7 @@ class AnyCache(object):
             self.cachedir.mkdir(parents=True)
 
     @staticmethod
-    def __is_outdated(ce, debugout):
+    def __is_outdated(logger, ce):
         outdated = True
         if ce.dep.exists() and ce.data.exists():
             data_mtime = ce.data.stat().st_mtime
@@ -274,25 +261,25 @@ class AnyCache(object):
                     outdated = any([(pathlib.Path(line.rstrip()).stat().st_mtime > data_mtime)
                                     for line in depfile])
             except Exception:
-                logging.getLogger(__name__).warn("CORRUPT cache dep '%s'" % (ce.dep))
+                logger.warn("CORRUPT cache dep '%s'" % (ce.dep))
         return outdated
 
     @staticmethod
-    def _read(ce, debugout):
+    def __read(logger, ce):
         valid, result = False, None
         with ce.lock:
-            if not AnyCache.__is_outdated(ce, debugout):
+            if not AnyCache.__is_outdated(logger, ce):
                 with open(str(ce.data), "rb") as cachefile:
                     try:
                         result, valid = pickle.load(cachefile), True
-                        debugout("READING cache entry '%s'" % (ce.ident))
+                        logger.debug("READING cache entry '%s'" % (ce.ident))
                     except Exception as exc:
-                        logging.getLogger(__name__).warn("CORRUPT cache entry '%s'. %r" % (ce.data, exc))
+                        logger.warn("CORRUPT cache entry '%s'. %r" % (ce.data, exc))
         return valid, result
 
     @staticmethod
-    def _write(ce, result, deps, debugout):
-        debugout("WRITING cache entry '%s'" % (ce.ident))
+    def __write(logger, ce, result, deps):
+        logger.debug("WRITING cache entry '%s'" % (ce.ident))
         # we need to lock the cache for write
         # writing takes a long time, so we are writing to temporay files, lock and copy over.
         with tempfile.NamedTemporaryFile("wb", prefix="anycache-", suffix=_CACHE_SUFFIX) as datatmpfile:
@@ -310,7 +297,7 @@ class AnyCache(object):
                     shutil.copyfile(deptmpfile.name, str(ce.dep))
 
     @staticmethod
-    def _tidyup(cachedir, maxsize, debugout):
+    def __tidyup(logger, cachedir, maxsize):
         if maxsize is not None:
             cacheinfo = _CacheInfo(cachedir)
             totalsize = cacheinfo.totalsize
@@ -321,13 +308,13 @@ class AnyCache(object):
                 with oldest.ce.lock:
                     oldest.ce.data.unlink()
                     oldest.ce.dep.unlink()
-                debugout("REMOVING cache entry '%s'" % (oldest.ce.ident))
+                logger.debug("REMOVING cache entry '%s'" % (oldest.ce.ident))
 
 
 DEFAULT_CACHE = None
 
 
-def anycache(depfilefunc=None, debug=False, cachedir=None, maxsize=None):
+def anycache(cachedir=None, maxsize=None, depfilefunc=None):
     """
     Decorator to cache result of function depending on arguments.
 
@@ -339,8 +326,6 @@ def anycache(depfilefunc=None, debug=False, cachedir=None, maxsize=None):
     an :any:`AnyCache` instance with a persistent `cachedir`.
 
     Keyword Args:
-        depfilefunc: Dependency file function (see example below)
-        debug (bool): Send detailed cache read/write information to :any:`logging`.
         cachedir: Directory for cached python objects. :any:`AnyCache`
                   instances on the same `cachedir` share the same cache.
         maxsize: Maximum cache size in bytes.
@@ -351,6 +336,7 @@ def anycache(depfilefunc=None, debug=False, cachedir=None, maxsize=None):
                  During object write the cache size might be larger than
                  `maxsize`. At maximum twice as large as the maximum object
                  size.
+        depfilefunc: Dependency file function (see example below)
 
     >>> from anycache import anycache
     >>> @anycache()
@@ -389,4 +375,4 @@ def anycache(depfilefunc=None, debug=False, cachedir=None, maxsize=None):
             DEFAULT_CACHE = AnyCache()
         ac = DEFAULT_CACHE
 
-    return ac.anycache(depfilefunc=depfilefunc, debug=debug)
+    return ac.anycache(depfilefunc=depfilefunc)
