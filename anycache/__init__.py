@@ -4,10 +4,12 @@ import collections
 import hashlib
 import logging
 import pathlib
+import shutil
 import sys
 import tempfile
 
 import dill as pickle  # improved pickle
+import filelock
 
 __version__ = "1.1.1"
 __author__ = "c0fec0de"
@@ -18,7 +20,7 @@ __url__ = "https://github.com/c0fec0de/anycache"
 
 __all__ = ("AnyCache", "anycache")
 
-_CacheEntry = collections.namedtuple("_CacheEntry", ("ident", "data", "dep"))
+_CacheEntry = collections.namedtuple("_CacheEntry", ("ident", "data", "dep", "lock"))
 _CacheEntryInfo = collections.namedtuple("_CacheEntryInfo", ("ce", "mtime", "size"))
 _FuncInfo = collections.namedtuple("FuncInfo", ("func", "args", "kwargs", "depfilefunc"))
 
@@ -30,6 +32,7 @@ else:
 
 _CACHE_SUFFIX = ".cache"
 _DEP_SUFFIX = ".dep"
+_LOCK_SUFFIX = ".lock"
 
 
 class _CacheInfo(object):
@@ -44,14 +47,16 @@ class _CacheInfo(object):
     def create_ce_from_ident(cachedir, ident):
         data = cachedir / (ident + _CACHE_SUFFIX)
         dep = cachedir / (ident + _DEP_SUFFIX)
-        return _CacheEntry(ident, data, dep)
+        lock = filelock.FileLock(str(cachedir / (ident + _LOCK_SUFFIX)))
+        return _CacheEntry(ident, data, dep, lock)
 
     @staticmethod
     def create_ce_from_datafilepath(datafilepath):
         ident = datafilepath.name
         data = datafilepath
         dep = datafilepath.with_suffix(_DEP_SUFFIX)
-        return _CacheEntry(ident, data, dep)
+        lock = filelock.FileLock(str(datafilepath.with_suffix(_LOCK_SUFFIX)))
+        return _CacheEntry(ident, data, dep, lock)
 
     @staticmethod
     def create_cei(ce):
@@ -260,7 +265,7 @@ class AnyCache(object):
             self.cachedir.mkdir(parents=True)
 
     @staticmethod
-    def _is_outdated(ce, debugout):
+    def __is_outdated(ce, debugout):
         outdated = True
         if ce.dep.exists() and ce.data.exists():
             data_mtime = ce.data.stat().st_mtime
@@ -275,23 +280,34 @@ class AnyCache(object):
     @staticmethod
     def _read(ce, debugout):
         valid, result = False, None
-        if not AnyCache._is_outdated(ce, debugout):
-            with open(str(ce.data), "rb") as cachefile:
-                try:
-                    result, valid = pickle.load(cachefile), True
-                    debugout("READING cache entry '%s'" % (ce.ident))
-                except Exception as exc:
-                    logging.getLogger(__name__).warn("CORRUPT cache entry '%s'. %r" % (ce.data, exc))
+        with ce.lock:
+            if not AnyCache.__is_outdated(ce, debugout):
+                with open(str(ce.data), "rb") as cachefile:
+                    try:
+                        result, valid = pickle.load(cachefile), True
+                        debugout("READING cache entry '%s'" % (ce.ident))
+                    except Exception as exc:
+                        logging.getLogger(__name__).warn("CORRUPT cache entry '%s'. %r" % (ce.data, exc))
         return valid, result
 
     @staticmethod
     def _write(ce, result, deps, debugout):
-        with open(str(ce.data), "wb") as cachefile:
-            debugout("WRITING cache entry '%s'" % (ce.ident))
-            pickle.dump(result, cachefile)
-        with open(str(ce.dep), "w") as depfile:
-            for dep in deps:
-                depfile.write("%s\n" % (dep))
+        debugout("WRITING cache entry '%s'" % (ce.ident))
+        # we need to lock the cache for write
+        # writing takes a long time, so we are writing to temporay files, lock and copy over.
+        with tempfile.NamedTemporaryFile("wb", prefix="anycache-", suffix=_CACHE_SUFFIX) as datatmpfile:
+            with tempfile.NamedTemporaryFile("w", prefix="anycache-", suffix=_DEP_SUFFIX) as deptmpfile:
+                # data
+                pickle.dump(result, datatmpfile)
+                datatmpfile.flush()
+                # dep
+                for dep in deps:
+                    deptmpfile.write("%s\n" % (dep))
+                deptmpfile.flush()
+                # copy over
+                with ce.lock:
+                    shutil.copyfile(datatmpfile.name, str(ce.data))
+                    shutil.copyfile(deptmpfile.name, str(ce.dep))
 
     @staticmethod
     def _tidyup(cachedir, maxsize, debugout):
@@ -302,8 +318,9 @@ class AnyCache(object):
             while (totalsize > maxsize) and (len(ceis) > 2):
                 oldest = ceis.popleft()
                 totalsize -= oldest.size
-                oldest.ce.data.unlink()
-                oldest.ce.dep.unlink()
+                with oldest.ce.lock:
+                    oldest.ce.data.unlink()
+                    oldest.ce.dep.unlink()
                 debugout("REMOVING cache entry '%s'" % (oldest.ce.ident))
 
 
