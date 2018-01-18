@@ -21,7 +21,7 @@ def test_filedepfunc():
                 deps = [depfilepath1]
                 if posarg == 4:
                     deps.append(depfilepath2)
-                return deps
+                return [d for d in deps if d.exists()]
 
             @anycache(depfilefunc=depfilefunc)
             def myfunc(posarg, kwarg=3):
