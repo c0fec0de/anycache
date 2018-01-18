@@ -199,9 +199,9 @@ class AnyCache(object):
 
     def clear(self):
         """Clear the cache by removing all cache files."""
-        cachedir = self.cachedir
+        cachedir = self.__cachedir
         self._get_debugout()("CLEARING cache")
-        if cachedir.exists():
+        if cachedir and cachedir.exists():
             for file in cachedir.glob("*"):
                 file.unlink()
             cachedir.rmdir()
