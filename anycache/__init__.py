@@ -192,6 +192,10 @@ class AnyCache(object):
                 funcinfo = _FuncInfo(func, args, kwargs, depfilefunc)
                 return self._is_outdated(funcinfo)
 
+            def remove(*args, **kwargs):
+                funcinfo = _FuncInfo(func, args, kwargs, depfilefunc)
+                return self._remove(funcinfo)
+
             def wrapped(*args, **kwargs):
                 if self.maxsize == 0:
                     result = func(*args, **kwargs)
@@ -201,13 +205,55 @@ class AnyCache(object):
                 return result
 
             wrapped.is_outdated = is_outdated
+            wrapped.remove = remove
 
             return wrapped
         return decorator
 
     def is_outdated(self, func, *args, **kwargs):
-        """Return `True` if cache is outdated for `func` used with `args` and `kwargs`."""
+        """
+        Return `True` if cache is outdated for `func` used with `args` and `kwargs`.
+
+        >>> from anycache import AnyCache
+        >>> ac = AnyCache()
+        >>> @ac.anycache()
+        ... def myfunc(posarg, kwarg=3):
+        ...     print("  Calcing %r + %r = %r" % (posarg, kwarg, posarg + kwarg))
+        ...     return posarg + kwarg
+        >>> ac.is_outdated(myfunc, 2, 5)
+        True
+        >>> myfunc(2, 5)
+          Calcing 2 + 5 = 7
+        7
+        >>> ac.is_outdated(myfunc, 2, 5)
+        False
+        """
         return func.is_outdated(*args, **kwargs)
+
+    def remove(self, func, *args, **kwargs):
+        """
+        Remove cache data for `func` used with `args` and `kwargs`.
+
+        >>> from anycache import AnyCache
+        >>> ac = AnyCache()
+        >>> @ac.anycache()
+        ... def myfunc(posarg, kwarg=3):
+        ...     print("  Calcing %r + %r = %r" % (posarg, kwarg, posarg + kwarg))
+        ...     return posarg + kwarg
+        >>> myfunc(2, 5)
+          Calcing 2 + 5 = 7
+        7
+        >>> ac.remove(myfunc, 2, 5)
+        >>> myfunc(2, 5)
+          Calcing 2 + 5 = 7
+        7
+
+        Removing non-existing cache entries is not an error:
+
+        >>> ac.remove(myfunc, 2, 5)
+        >>> ac.remove(myfunc, 2, 5)
+        """
+        return func.remove(*args, **kwargs)
 
     def clear(self):
         """Clear the cache by removing all cache files."""
@@ -246,7 +292,6 @@ class AnyCache(object):
             AnyCache.__tidyup(logger, self.cachedir, self.maxsize)
         return result
 
-
     def _is_outdated(self, funcinfo):
         logger = logging.getLogger(__name__)
         ident = self.__get_ident(funcinfo)
@@ -256,6 +301,12 @@ class AnyCache(object):
             is_outdated = AnyCache.__is_outdated(logger, ce)
         return is_outdated
 
+    def _remove(self, funcinfo):
+        logger = logging.getLogger(__name__)
+        ident = self.__get_ident(funcinfo)
+        ce = _CacheInfo.create_ce_from_ident(self.cachedir, ident)
+        self._ensure_cachedir()
+        AnyCache.__remove(logger, ce)
 
     @staticmethod
     def __get_ident(fi):
@@ -324,12 +375,18 @@ class AnyCache(object):
             totalsize = cacheinfo.totalsize
             ceis = collections.deque(sorted(cacheinfo.cacheentryinfos, key=lambda info: info.mtime))
             while (totalsize > maxsize) and (len(ceis) > 2):
-                oldest = ceis.popleft()
-                totalsize -= oldest.size
-                with oldest.ce.lock:
-                    oldest.ce.data.unlink()
-                    oldest.ce.dep.unlink()
-                logger.info("REMOVING cache entry '%s'" % (oldest.ce.ident))
+                cei = ceis.popleft()
+                totalsize -= cei.size
+                AnyCache.__remove(logger, cei.ce)
+
+    @staticmethod
+    def __remove(logger, ce):
+        with ce.lock:
+            if ce.data.exists():
+                ce.data.unlink()
+            if ce.dep.exists():
+                ce.dep.unlink()
+        logger.info("REMOVING cache entry '%s'" % (ce.ident))
 
 
 __DEFAULT_CACHE = None
