@@ -188,6 +188,10 @@ class AnyCache(object):
         """
         def decorator(func):
 
+            def is_outdated(*args, **kwargs):
+                funcinfo = _FuncInfo(func, args, kwargs, depfilefunc)
+                return self._is_outdated(funcinfo)
+
             def wrapped(*args, **kwargs):
                 if self.maxsize == 0:
                     result = func(*args, **kwargs)
@@ -196,8 +200,14 @@ class AnyCache(object):
                     result = self._anycache(funcinfo)
                 return result
 
+            wrapped.is_outdated = is_outdated
+
             return wrapped
         return decorator
+
+    def is_outdated(self, func, *args, **kwargs):
+        """Return `True` if cache is outdated for `func` used with `args` and `kwargs`."""
+        return func.is_outdated(*args, **kwargs)
 
     def clear(self):
         """Clear the cache by removing all cache files."""
@@ -219,7 +229,7 @@ class AnyCache(object):
 
     def _anycache(self, funcinfo):
         logger = logging.getLogger(__name__)
-        ident = self._get_ident(funcinfo)
+        ident = self.__get_ident(funcinfo)
         ce = _CacheInfo.create_ce_from_ident(self.cachedir, ident)
         self._ensure_cachedir()
         # try to read
@@ -236,8 +246,19 @@ class AnyCache(object):
             AnyCache.__tidyup(logger, self.cachedir, self.maxsize)
         return result
 
+
+    def _is_outdated(self, funcinfo):
+        logger = logging.getLogger(__name__)
+        ident = self.__get_ident(funcinfo)
+        ce = _CacheInfo.create_ce_from_ident(self.cachedir, ident)
+        self._ensure_cachedir()
+        with ce.lock:
+            is_outdated = AnyCache.__is_outdated(logger, ce)
+        return is_outdated
+
+
     @staticmethod
-    def _get_ident(fi):
+    def __get_ident(fi):
         func = fi.func
         name = "%s.%s(%s, %s)" % (func.__module__, func.__name__, fi.args, fi.kwargs)
         h = hashlib.sha256()
