@@ -16,6 +16,8 @@ __description__ = """Cache any python object to file using improved pickling .""
 __url__ = "https://github.com/c0fec0de/anycache"
 
 
+__all__ = ("AnyCache", "anycache")
+
 _CacheEntry = collections.namedtuple("_CacheEntry", ("ident", "data", "dep"))
 _CacheEntryInfo = collections.namedtuple("_CacheEntryInfo", ("ce", "mtime", "size"))
 _FuncInfo = collections.namedtuple("FuncInfo", ("func", "args", "kwargs", "depfilefunc"))
