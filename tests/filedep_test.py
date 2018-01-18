@@ -5,6 +5,7 @@ from nose.tools import eq_
 
 from anycache import anycache
 
+TOUCHTIME = 2
 
 def test_filedepfunc():
     """File dependencies."""
@@ -19,7 +20,7 @@ def test_filedepfunc():
             def depfilefunc(result, posarg, kwarg=3):
                 deps = [depfilepath1]
                 if posarg == 4:
-                    deps.append(depfile2.name)
+                    deps.append(depfilepath2)
                 return deps
 
             @anycache(depfilefunc=depfilefunc)
@@ -36,9 +37,9 @@ def test_filedepfunc():
             eq_(myfunc(4, 5), 9)
             eq_(myfunc.callcount, 2)
 
-            sleep(3)
+            sleep(TOUCHTIME)
             depfilepath1.touch()
-            sleep(3)
+            sleep(TOUCHTIME)
 
             eq_(myfunc(4, 5), 9)
             eq_(myfunc.callcount, 3)
@@ -50,11 +51,19 @@ def test_filedepfunc():
             eq_(myfunc(1, 5), 6)
             eq_(myfunc.callcount, 4)
 
-            sleep(3)
+            sleep(TOUCHTIME)
             depfilepath2.touch()
-            sleep(3)
+            sleep(TOUCHTIME)
 
             eq_(myfunc(4, 5), 9)
             eq_(myfunc.callcount, 5)
             eq_(myfunc(1, 5), 6)
             eq_(myfunc.callcount, 5)
+
+            depfile2.close()
+            assert not depfilepath2.exists()
+
+            eq_(myfunc(4, 5), 9)
+            eq_(myfunc.callcount, 6)
+            eq_(myfunc(4, 5), 9)
+            eq_(myfunc.callcount, 6)
