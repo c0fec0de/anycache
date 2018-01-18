@@ -196,6 +196,10 @@ class AnyCache(object):
                 funcinfo = _FuncInfo(func, args, kwargs, depfilefunc)
                 return self._remove(funcinfo)
 
+            def get_ident(*args, **kwargs):
+                funcinfo = _FuncInfo(func, args, kwargs, depfilefunc)
+                return self._get_ident(funcinfo)
+
             def wrapped(*args, **kwargs):
                 if self.maxsize == 0:
                     result = func(*args, **kwargs)
@@ -206,6 +210,7 @@ class AnyCache(object):
 
             wrapped.is_outdated = is_outdated
             wrapped.remove = remove
+            wrapped.get_ident = get_ident
 
             return wrapped
         return decorator
@@ -255,6 +260,29 @@ class AnyCache(object):
         """
         return func.remove(*args, **kwargs)
 
+    def get_ident(self, func, *args, **kwargs):
+        """
+        Return identification string for `func` used with `args` and `kwargs`.
+
+        >>> from anycache import AnyCache
+        >>> ac = AnyCache()
+        >>> @ac.anycache()
+        ... def myfunc(posarg, kwarg=3):
+        ...     print("  Calcing %r + %r = %r" % (posarg, kwarg, posarg + kwarg))
+        ...     return posarg + kwarg
+        >>> @ac.anycache()
+        ... def otherfunc(posarg, kwarg=3):
+        ...     print("  Calcing %r + %r = %r" % (posarg, kwarg, posarg + kwarg))
+        ...     return posarg + kwarg
+        >>> ac.get_ident(myfunc, 2, 5)
+        '19044d3869955fa79d7f3db8fcdc5af84b3f55c0bdab2b4aee1bb21e1a9856c9'
+        >>> ac.get_ident(myfunc, 2, 6)
+        '1885e09f9898a1f1bd186f052d0e810693faa14b70e7b6b22de61b90c8171427'
+        >>> ac.get_ident(otherfunc, 2, 5)
+        '9b8aea26422999aaa7aed0fdb4d5145fd33b87de20f322cf175997e9b1835158'
+        """
+        return func.get_ident(*args, **kwargs)
+
     def clear(self):
         """Clear the cache by removing all cache files."""
         cachedir = self.__cachedir
@@ -275,7 +303,7 @@ class AnyCache(object):
 
     def _anycache(self, funcinfo):
         logger = logging.getLogger(__name__)
-        ident = self.__get_ident(funcinfo)
+        ident = self._get_ident(funcinfo)
         ce = _CacheInfo.create_ce_from_ident(self.cachedir, ident)
         self._ensure_cachedir()
         # try to read
@@ -294,7 +322,7 @@ class AnyCache(object):
 
     def _is_outdated(self, funcinfo):
         logger = logging.getLogger(__name__)
-        ident = self.__get_ident(funcinfo)
+        ident = self._get_ident(funcinfo)
         ce = _CacheInfo.create_ce_from_ident(self.cachedir, ident)
         self._ensure_cachedir()
         with ce.lock:
@@ -303,13 +331,13 @@ class AnyCache(object):
 
     def _remove(self, funcinfo):
         logger = logging.getLogger(__name__)
-        ident = self.__get_ident(funcinfo)
+        ident = self._get_ident(funcinfo)
         ce = _CacheInfo.create_ce_from_ident(self.cachedir, ident)
         self._ensure_cachedir()
         AnyCache.__remove(logger, ce)
 
     @staticmethod
-    def __get_ident(fi):
+    def _get_ident(fi):
         func = fi.func
         name = "%s.%s(%s, %s)" % (func.__module__, func.__name__, fi.args, fi.kwargs)
         h = hashlib.sha256()
