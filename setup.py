@@ -38,7 +38,10 @@ config['classifiers'] = [
 ]
 config['keywords'] = 'cache, cache file, pickle, dill'
 config['packages'] = ['anycache']
-config['install_requires'] = ['dill']
+config['install_requires'] = [
+    'dill',
+    'filelock',
+]
 config['extras_require'] = {
     'dev': ['check-manifest'],
     'test': ['coverage'],
