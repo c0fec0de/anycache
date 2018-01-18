@@ -202,8 +202,8 @@ class AnyCache(object):
     def clear(self):
         """Clear the cache by removing all cache files."""
         cachedir = self.__cachedir
-        self._get_debugout()("CLEARING cache")
         if cachedir and cachedir.exists():
+            self._get_debugout()("CLEARING cache '%s" % cachedir)
             for file in cachedir.glob("*"):
                 file.unlink()
             cachedir.rmdir()
@@ -269,7 +269,7 @@ class AnyCache(object):
                     outdated = any([(pathlib.Path(line.rstrip()).stat().st_mtime > data_mtime)
                                     for line in depfile])
             except Exception:
-                debugout("CORRUPT cache dep '%s'" % (ce.ident))
+                logging.getLogger(__name__).warn("CORRUPT cache dep '%s'" % (ce.dep))
         return outdated
 
     @staticmethod
@@ -280,8 +280,8 @@ class AnyCache(object):
                 try:
                     result, valid = pickle.load(cachefile), True
                     debugout("READING cache entry '%s'" % (ce.ident))
-                except Exception:
-                    debugout("CORRUPT cache entry '%s'" % (ce.ident))
+                except Exception as exc:
+                    logging.getLogger(__name__).warn("CORRUPT cache entry '%s'. %r" % (ce.data, exc))
         return valid, result
 
     @staticmethod
