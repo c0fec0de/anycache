@@ -224,9 +224,7 @@ class AnyCache(object):
         self._ensure_cachedir()
         # try to read
         valid, result = AnyCache.__read(logger, ce)
-        if valid:
-            ce.data.touch()
-        else:
+        if not valid:
             func, args, kwargs, depfilefunc = funcinfo
             # execute
             result = func(*args, **kwargs)
@@ -275,6 +273,8 @@ class AnyCache(object):
                         logger.info("READING cache entry '%s'" % (ce.ident))
                     except Exception as exc:
                         logger.warn("CORRUPT cache entry '%s'. %r" % (ce.data, exc))
+            else:
+                ce.data.touch()
         return valid, result
 
     @staticmethod
