@@ -305,7 +305,7 @@ class AnyCache(object):
                 debugout("REMOVING cache entry '%s'" % (oldest.ce.ident))
 
 
-DEFAULT_CACHE = AnyCache()
+DEFAULT_CACHE = None
 
 
 def anycache(depfilefunc=None, debug=False, cachedir=None, maxsize=None):
@@ -365,5 +365,9 @@ def anycache(depfilefunc=None, debug=False, cachedir=None, maxsize=None):
     if (cachedir is not None) or (maxsize is not None):
         ac = AnyCache(cachedir=cachedir, maxsize=maxsize)
     else:
+        global DEFAULT_CACHE
+        if DEFAULT_CACHE is None:
+            DEFAULT_CACHE = AnyCache()
         ac = DEFAULT_CACHE
+
     return ac.anycache(depfilefunc=depfilefunc, debug=debug)
