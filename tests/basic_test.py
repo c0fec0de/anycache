@@ -11,7 +11,7 @@ from anycache import anycache
 def test_basic():
     """Basic functionality."""
 
-    @anycache(debug=True)
+    @anycache()
     def myfunc(posarg, kwarg=3):
         # count the number of calls
         myfunc.callcount += 1

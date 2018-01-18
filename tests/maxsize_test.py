@@ -53,7 +53,7 @@ def test_maxsize_none():
 
 def test_maxsize_value():
     """Limited Caching."""
-    ac = AnyCache(maxsize=None, debug=True)
+    ac = AnyCache(maxsize=None)
 
     @ac.anycache()
     def myfunc(posarg, kwarg=3):
