@@ -18,7 +18,7 @@ __description__ = """Cache any python object to file using improved pickling .""
 __url__ = "https://github.com/c0fec0de/anycache"
 
 
-__all__ = ("AnyCache", "anycache")
+__all__ = ("AnyCache", "anycache", "get_defaultcache")
 
 _CacheEntry = collections.namedtuple("_CacheEntry", ("ident", "data", "dep", "lock"))
 _CacheEntryInfo = collections.namedtuple("_CacheEntryInfo", ("ce", "mtime", "size"))
@@ -370,9 +370,14 @@ def anycache(cachedir=None, maxsize=None, depfilefunc=None):
     if (cachedir is not None) or (maxsize is not None):
         ac = AnyCache(cachedir=cachedir, maxsize=maxsize)
     else:
-        global DEFAULT_CACHE
-        if DEFAULT_CACHE is None:
-            DEFAULT_CACHE = AnyCache()
-        ac = DEFAULT_CACHE
+        ac = get_defaultcache()
 
     return ac.anycache(depfilefunc=depfilefunc)
+
+
+def get_defaultcache():
+    """Return unlimited default :any:`AnyCache` instance."""
+    global __DEFAULT_CACHE
+    if __DEFAULT_CACHE is None:
+        __DEFAULT_CACHE = AnyCache()
+    return __DEFAULT_CACHE

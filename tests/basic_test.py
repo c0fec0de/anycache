@@ -4,7 +4,7 @@ from tempfile import mkdtemp
 from nose.tools import eq_
 
 from anycache import AnyCache
-from anycache import DEFAULT_CACHE
+from anycache import get_defaultcache
 from anycache import anycache
 
 
@@ -29,7 +29,7 @@ def test_basic():
     eq_(myfunc(4, 5), 9)
     eq_(myfunc.callcount, 2)
 
-    assert DEFAULT_CACHE.size > 0
+    assert get_defaultcache().size > 0
 
 
 def test_del():
