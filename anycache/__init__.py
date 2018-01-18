@@ -286,11 +286,13 @@ class AnyCache(object):
     def clear(self):
         """Clear the cache by removing all cache files."""
         # destructor save implementation
-        cachedir = getattr(self, "__cachedir", None)
+        try:
+            cachedir = self.__cachedir
+        except AttributeError:
+            cachedir = None
         if cachedir and cachedir.exists():
-            from logging import getLogger
-
-            getLogger(__name__).debug("CLEARING cache '%s" % cachedir)
+            if logging:
+                logging.getLogger(__name__).debug("CLEARING cache '%s" % cachedir)
             for file in cachedir.glob("*"):
                 file.unlink()
             cachedir.rmdir()
