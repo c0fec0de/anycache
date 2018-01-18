@@ -11,7 +11,7 @@ import tempfile
 import dill as pickle  # improved pickle
 import filelock
 
-__version__ = "2.0.0"
+__version__ = "2.0.1"
 __author__ = "c0fec0de"
 __author_email__ = "c0fec0de@gmail.com"
 __description__ = """Cache any python object to file using improved pickling ."""
