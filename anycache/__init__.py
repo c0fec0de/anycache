@@ -402,7 +402,7 @@ class AnyCache(object):
                         shutil.copyfile(datatmpfile.name, str(ce.data))
                         shutil.copyfile(deptmpfile.name, str(ce.dep))
         except Exception as exc:
-            logger.warn("FAILED cache write '%s'" % (ce.ident))
+            logger.warn("FAILED cache write '%s'. %r" % (ce.data, exc))
 
     @staticmethod
     def __tidyup(logger, cachedir, maxsize):
