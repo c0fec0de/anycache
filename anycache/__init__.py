@@ -26,7 +26,7 @@ _FuncInfo = collections.namedtuple("FuncInfo", ("func", "args", "kwargs", "depfi
 
 if sys.version_info[0] < 3:  # pragma: no cover
     _bytes = bytes
-else:
+else:  # pragma: no cover
     def _bytes(name):
         return bytes(name, encoding='utf-8')
 
@@ -288,10 +288,10 @@ class AnyCache(object):
         # destructor save implementation
         try:
             cachedir = self.__cachedir
-        except AttributeError:
+        except AttributeError:  # pragma: no cover
             cachedir = None
         if cachedir and cachedir.exists():
-            if logging:
+            if logging:  # pragma: no cover
                 logging.getLogger(__name__).debug("CLEARING cache '%s" % cachedir)
             for file in cachedir.glob("*"):
                 file.unlink()
@@ -400,7 +400,7 @@ class AnyCache(object):
                     with ce.lock:
                         shutil.copyfile(datatmpfile.name, str(ce.data))
                         shutil.copyfile(deptmpfile.name, str(ce.dep))
-        except Exception as exc:
+        except Exception as exc:  # pragma: no cover
             logger.warn("FAILED cache write '%s'. %r" % (ce.data, exc))
 
     @staticmethod
