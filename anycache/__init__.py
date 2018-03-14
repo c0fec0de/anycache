@@ -378,7 +378,6 @@ class AnyCache(object):
                         logger.info("READING cache entry '%s'" % (ce.ident))
                     except Exception as exc:
                         logger.warn("CORRUPT cache entry '%s'. %r" % (ce.data, exc))
-            else:
                 ce.data.touch()
         return valid, result
 
