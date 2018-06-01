@@ -26,6 +26,7 @@ _FuncInfo = collections.namedtuple("FuncInfo", ("func", "args", "kwargs", "depfi
 
 if sys.version_info[0] < 3:  # pragma: no cover
     _bytes = bytes
+    FileExistsError = OSError
 else:  # pragma: no cover
     def _bytes(name):
         return bytes(name, encoding='utf-8')
