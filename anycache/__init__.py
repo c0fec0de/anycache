@@ -351,8 +351,7 @@ class AnyCache(object):
         return ident
 
     def _ensure_cachedir(self):
-        if not self.cachedir.exists():
-            self.cachedir.mkdir(parents=True)
+        self.cachedir.mkdir(parents=True, exist_ok=True)
 
     @staticmethod
     def __is_outdated(logger, ce):
