@@ -13,12 +13,12 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import sys
 import os
+import sys
 
 
 name = "anycache"
-version = "2.0.4"
+version = "2.0.6"
 author = 'c0fec0de'
 description = "Cache Any Python Object"
 
