@@ -29,12 +29,12 @@ config['license'] = 'Apache 2.0'
 config['classifiers'] = [
     'Development Status :: 5 - Production/Stable',
     'Programming Language :: Python :: 2',
-    'Programming Language :: Python :: 2.6',
     'Programming Language :: Python :: 2.7',
     'Programming Language :: Python :: 3',
     'Programming Language :: Python :: 3.4',
     'Programming Language :: Python :: 3.5',
     'Programming Language :: Python :: 3.6',
+    'Programming Language :: Python :: 3.7',
 ]
 config['keywords'] = 'cache, cache file, pickle, dill'
 config['packages'] = ['anycache']
