@@ -59,9 +59,9 @@ Links
 * Issues_
 * Contributors_
 
-.. _anycache: https://anycache.readthedocs.io/en//
-.. _Documentation: https://anycache.readthedocs.io/en//
-.. _PyPI: https://pypi.org/project/anycache//
+.. _anycache: https://anycache.readthedocs.io/en/2.1.0/
+.. _Documentation: https://anycache.readthedocs.io/en/2.1.0/
+.. _PyPI: https://pypi.org/project/anycache/2.1.0/
 .. _GitHub: https://github.com/c0fec0de/anycache
 .. _Changelog: https://github.com/c0fec0de/anycache/releases
 .. _Issues: https://github.com/c0fec0de/anycache/issues

@@ -1,3 +1,4 @@
+
 .. image:: https://badge.fury.io/py/anycache.svg
     :target: https://badge.fury.io/py/anycache
 
@@ -10,12 +11,8 @@
 .. image:: https://coveralls.io/repos/github/c0fec0de/anycache/badge.svg
     :target: https://coveralls.io/github/c0fec0de/anycache
 
-.. image:: https://readthedocs.org/projects/anycache/badge/?version=
-    :target: https://anycache.readthedocs.io/en//?badge=
-
-.. image:: https://api.codeclimate.com/v1/badges/e6d325d6fd23a93aab20/maintainability
-   :target: https://codeclimate.com/github/c0fec0de/anycache/maintainability
-   :alt: Maintainability
+.. image:: https://readthedocs.org/projects/anycache/badge/?version=2.1.0
+    :target: https://anycache.readthedocs.io/en/2.1.0/?badge=2.1.0
 
 .. image:: https://img.shields.io/pypi/pyversions/anycache.svg
    :target: https://pypi.python.org/pypi/anycache
@@ -43,7 +40,6 @@
 
 .. image:: https://img.shields.io/github/issues-pr-closed/c0fec0de/anycache.svg
    :target: https://github.com/c0fec0de/anycache/pulls?q=is%3Apr+is%3Aclosed
-
 
 Links
 =====
