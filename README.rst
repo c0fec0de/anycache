@@ -10,8 +10,8 @@
 .. image:: https://coveralls.io/repos/github/c0fec0de/anycache/badge.svg
     :target: https://coveralls.io/github/c0fec0de/anycache
 
-.. image:: https://readthedocs.org/projects/anycache/badge/?version=2.0.7
-    :target: https://anycache.readthedocs.io/en/2.0.7/?badge=2.0.7
+.. image:: https://readthedocs.org/projects/anycache/badge/?version=
+    :target: https://anycache.readthedocs.io/en//?badge=
 
 .. image:: https://api.codeclimate.com/v1/badges/e6d325d6fd23a93aab20/maintainability
    :target: https://codeclimate.com/github/c0fec0de/anycache/maintainability
@@ -55,9 +55,9 @@ Links
 * Issues_
 * Contributors_
 
-.. _anycache: https://anycache.readthedocs.io/en/2.0.7/
-.. _Documentation: https://anycache.readthedocs.io/en/2.0.7/
-.. _PyPI: https://pypi.org/project/anycache/2.0.7/
+.. _anycache: https://anycache.readthedocs.io/en//
+.. _Documentation: https://anycache.readthedocs.io/en//
+.. _PyPI: https://pypi.org/project/anycache//
 .. _GitHub: https://github.com/c0fec0de/anycache
 .. _Changelog: https://github.com/c0fec0de/anycache/releases
 .. _Issues: https://github.com/c0fec0de/anycache/issues
