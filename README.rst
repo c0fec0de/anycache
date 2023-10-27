@@ -1,23 +1,24 @@
 .. image:: https://badge.fury.io/py/anycache.svg
     :target: https://badge.fury.io/py/anycache
 
-.. image:: https://travis-ci.org/c0fec0de/anycache.svg?branch=master
-    :target: https://travis-ci.org/c0fec0de/anycache
+.. image:: https://img.shields.io/pypi/dm/anycache.svg?label=pypi%20downloads
+   :target: https://pypi.python.org/pypi/anycache
+
+.. image:: https://readthedocs.org/projects/anycache/badge/?version=latest
+    :target: https://anycache.readthedocs.io/en/latest/?badge=latest
 
 .. image:: https://coveralls.io/repos/github/c0fec0de/anycache/badge.svg
     :target: https://coveralls.io/github/c0fec0de/anycache
 
 .. image:: https://readthedocs.org/projects/anycache/badge/?version=2.0.7
-    :target: http://anycache.readthedocs.io/en/2.0.7/?badge=2.0.7
+    :target: https://anycache.readthedocs.io/en/2.0.7/?badge=2.0.7
 
-.. image:: https://codeclimate.com/github/c0fec0de/anycache.png
-    :target: https://codeclimate.com/github/c0fec0de/anycache
+.. image:: https://api.codeclimate.com/v1/badges/e6d325d6fd23a93aab20/maintainability
+   :target: https://codeclimate.com/github/c0fec0de/anycache/maintainability
+   :alt: Maintainability
 
 .. image:: https://img.shields.io/pypi/pyversions/anycache.svg
    :target: https://pypi.python.org/pypi/anycache
-
-.. image:: https://landscape.io/github/c0fec0de/anycache/master/landscape.svg?style=flat
-   :target: https://landscape.io/github/c0fec0de/anycache/master
 
 .. image:: https://img.shields.io/badge/code%20style-pep8-brightgreen.svg
    :target: https://www.python.org/dev/peps/pep-0008/
@@ -25,17 +26,42 @@
 .. image:: https://img.shields.io/badge/code%20style-pep257-brightgreen.svg
    :target: https://www.python.org/dev/peps/pep-0257/
 
-Cache any python object to file using improved pickling
+.. image:: https://img.shields.io/badge/linter-pylint-%231674b1?style=flat
+   :target: https://www.pylint.org/
 
-Documentation
-=============
+.. image:: https://img.shields.io/badge/code%20style-black-000000.svg
+   :target: https://github.com/psf/black
 
-The Documentation_ is hosted on http://anycache.readthedocs.io/en/2.0.7/
+.. image:: https://img.shields.io/github/contributors/c0fec0de/anycache.svg
+   :target: https://github.com/c0fec0de/anycache/graphs/contributors/
 
-.. _Documentation: http://anycache.readthedocs.io/en/2.0.7/
+.. image:: https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square
+   :target: http://makeapullrequest.com
 
-Getting started
-===============
+.. image:: https://img.shields.io/github/issues-pr/c0fec0de/anycache.svg
+   :target: https://github.com/c0fec0de/anycache/pulls
+
+.. image:: https://img.shields.io/github/issues-pr-closed/c0fec0de/anycache.svg
+   :target: https://github.com/c0fec0de/anycache/pulls?q=is%3Apr+is%3Aclosed
+
+
+Links
+=====
+
+* Documentation_
+* PyPI_
+* GitHub_
+* Changelog_
+* Issues_
+* Contributors_
+
+.. _anycache: https://anycache.readthedocs.io/en/2.0.7/
+.. _Documentation: https://anycache.readthedocs.io/en/2.0.7/
+.. _PyPI: https://pypi.org/project/anycache/2.0.7/
+.. _GitHub: https://github.com/c0fec0de/anycache
+.. _Changelog: https://github.com/c0fec0de/anycache/releases
+.. _Issues: https://github.com/c0fec0de/anycache/issues
+.. _Contributors: https://github.com/c0fec0de/anycache/graphs/contributors
 
 .. _getting_started:
 

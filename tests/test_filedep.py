@@ -1,11 +1,12 @@
-from time import sleep
+"""File Dependency Testing."""
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from nose.tools import eq_
+from time import sleep
 
 from anycache import anycache
 
 TOUCHTIME = 2
+
 
 def test_filedepfunc():
     """File dependencies."""
@@ -18,6 +19,7 @@ def test_filedepfunc():
             depfilepath2 = Path(depfile2.name)
 
             def depfilefunc(result, posarg, kwarg=3):
+                # pylint: disable=unused-argument
                 deps = [depfilepath1]
                 if posarg == 4:
                     deps.append(depfilepath2)
@@ -28,42 +30,43 @@ def test_filedepfunc():
                 # count the number of calls
                 myfunc.callcount += 1
                 return posarg + kwarg
+
             myfunc.callcount = 0
 
-            eq_(myfunc(4, 5), 9)
-            eq_(myfunc.callcount, 1)
-            eq_(myfunc(1, 5), 6)
-            eq_(myfunc.callcount, 2)
-            eq_(myfunc(4, 5), 9)
-            eq_(myfunc.callcount, 2)
+            assert myfunc(4, 5) == 9
+            assert myfunc.callcount == 1
+            assert myfunc(1, 5) == 6
+            assert myfunc.callcount == 2
+            assert myfunc(4, 5) == 9
+            assert myfunc.callcount == 2
 
             sleep(TOUCHTIME)
             depfilepath1.touch()
             sleep(TOUCHTIME)
 
-            eq_(myfunc(4, 5), 9)
-            eq_(myfunc.callcount, 3)
-            eq_(myfunc(1, 5), 6)
-            eq_(myfunc.callcount, 4)
+            assert myfunc(4, 5) == 9
+            assert myfunc.callcount == 3
+            assert myfunc(1, 5) == 6
+            assert myfunc.callcount == 4
 
-            eq_(myfunc(4, 5), 9)
-            eq_(myfunc.callcount, 4)
-            eq_(myfunc(1, 5), 6)
-            eq_(myfunc.callcount, 4)
+            assert myfunc(4, 5) == 9
+            assert myfunc.callcount == 4
+            assert myfunc(1, 5) == 6
+            assert myfunc.callcount == 4
 
             sleep(TOUCHTIME)
             depfilepath2.touch()
             sleep(TOUCHTIME)
 
-            eq_(myfunc(4, 5), 9)
-            eq_(myfunc.callcount, 5)
-            eq_(myfunc(1, 5), 6)
-            eq_(myfunc.callcount, 5)
+            assert myfunc(4, 5) == 9
+            assert myfunc.callcount == 5
+            assert myfunc(1, 5) == 6
+            assert myfunc.callcount == 5
 
             depfile2.close()
             assert not depfilepath2.exists()
 
-            eq_(myfunc(4, 5), 9)
-            eq_(myfunc.callcount, 6)
-            eq_(myfunc(4, 5), 9)
-            eq_(myfunc.callcount, 6)
+            assert myfunc(4, 5) == 9
+            assert myfunc.callcount == 6
+            assert myfunc(4, 5) == 9
+            assert myfunc.callcount == 6

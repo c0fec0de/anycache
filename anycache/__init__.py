@@ -11,13 +11,6 @@ import tempfile
 import dill as pickle  # improved pickle
 import filelock
 
-__version__ = "2.0.7"
-__author__ = "c0fec0de"
-__author_email__ = "c0fec0de@gmail.com"
-__description__ = """Cache any python object to file using improved pickling ."""
-__url__ = "https://github.com/c0fec0de/anycache"
-
-
 __all__ = ("AnyCache", "anycache", "get_defaultcache")
 
 _CacheEntry = collections.namedtuple("_CacheEntry", ("ident", "data", "dep", "lock"))
@@ -26,26 +19,32 @@ _FuncInfo = collections.namedtuple("FuncInfo", ("func", "args", "kwargs", "depfi
 
 if sys.version_info[0] < 3:  # pragma: no cover
     _bytes = bytes
+    # pylint: disable=redefined-builtin
     FileExistsError = OSError
 else:  # pragma: no cover
+
     def _bytes(name):
-        return bytes(name, encoding='utf-8')
+        return bytes(name, encoding="utf-8")
+
 
 _CACHE_SUFFIX = ".cache"
 _DEP_SUFFIX = ".dep"
 _LOCK_SUFFIX = ".lock"
 
 
-class _CacheInfo(object):
+class _CacheInfo:
+
+    """Cache Information Contianer."""
 
     def __init__(self, cachedir):
         datafilepaths = cachedir.glob("*%s" % _CACHE_SUFFIX)
         self.cacheentries = [_CacheInfo.create_ce_from_datafilepath(d) for d in datafilepaths]
         self.cacheentryinfos = [_CacheInfo.create_cei(ce) for ce in self.cacheentries]
-        self.totalsize = sum([cei.size for cei in self.cacheentryinfos])
+        self.totalsize = sum(cei.size for cei in self.cacheentryinfos)
 
     @staticmethod
     def create_ce_from_ident(cachedir, ident):
+        """Create Cache Entry from Identifier."""
         data = cachedir / (ident + _CACHE_SUFFIX)
         dep = cachedir / (ident + _DEP_SUFFIX)
         lock = filelock.FileLock(str(cachedir / (ident + _LOCK_SUFFIX)))
@@ -53,6 +52,7 @@ class _CacheInfo(object):
 
     @staticmethod
     def create_ce_from_datafilepath(datafilepath):
+        """Create Cache Entry from filepath."""
         ident = datafilepath.name
         data = datafilepath
         dep = datafilepath.with_suffix(_DEP_SUFFIX)
@@ -61,68 +61,69 @@ class _CacheInfo(object):
 
     @staticmethod
     def create_cei(ce):
+        """Create Cache Entry Info."""
         mtime = ce.data.stat().st_mtime
         size = ce.data.stat().st_size + ce.dep.stat().st_size
         return _CacheEntryInfo(ce, mtime, size)
 
 
-class AnyCache(object):
+class AnyCache:
+    """
+    Cache for python objects.
+
+    Keyword Args:
+        cachedir: Directory for cached python objects. :any:`AnyCache`
+                    instances on the same `cachedir` share the same cache.
+        maxsize: Maximum cache size in bytes.
+                    `None` does not limit the cache size.
+                    `0` disables caching.
+                    It the maximum size is smaller than the last cached
+                    object, this object is kept.
+                    During object write the cache size might be larger than
+                    `maxsize`. At maximum twice as large as the maximum object
+                    size.
+
+    The :any:`AnyCache` instance mainly serves the :any:`AnyCache.anycache`
+    method for caching the result of functions.
+
+    >>> from anycache import AnyCache
+    >>> ac = AnyCache()
+    >>> @ac.anycache()
+    ... def myfunc(posarg, kwarg=3):
+    ...     print("  Calcing %r + %r = %r" % (posarg, kwarg, posarg + kwarg))
+    ...     return posarg + kwarg
+    >>> myfunc(4, 5)
+      Calcing 4 + 5 = 9
+    9
+    >>> myfunc(4, 5)
+    9
+    >>> myfunc(4, 2)
+      Calcing 4 + 2 = 6
+    6
+
+    The cache size is returned by :any:`AnyCache.size`.
+
+    >>> ac.size
+    10
+
+    The cache size can be limited via `maxsize`.
+    A `maxsize` of `0` disables caching.
+
+    >>> ac.maxsize = 0
+    >>> myfunc(4, 5)
+      Calcing 4 + 5 = 9
+    9
+
+    The cache is preserved in this case, and needs to be cleared explicitly:
+
+    >>> ac.size
+    10
+    >>> ac.clear()
+    >>> ac.size
+    0
+    """
 
     def __init__(self, cachedir=None, maxsize=None):
-        """
-        Cache for python objects.
-
-        Keyword Args:
-            cachedir: Directory for cached python objects. :any:`AnyCache`
-                      instances on the same `cachedir` share the same cache.
-            maxsize: Maximum cache size in bytes.
-                     `None` does not limit the cache size.
-                     `0` disables caching.
-                     It the maximum size is smaller than the last cached
-                     object, this object is kept.
-                     During object write the cache size might be larger than
-                     `maxsize`. At maximum twice as large as the maximum object
-                     size.
-
-        The :any:`AnyCache` instance mainly serves the :any:`AnyCache.anycache`
-        method for caching the result of functions.
-
-        >>> from anycache import AnyCache
-        >>> ac = AnyCache()
-        >>> @ac.anycache()
-        ... def myfunc(posarg, kwarg=3):
-        ...     print("  Calcing %r + %r = %r" % (posarg, kwarg, posarg + kwarg))
-        ...     return posarg + kwarg
-        >>> myfunc(4, 5)
-          Calcing 4 + 5 = 9
-        9
-        >>> myfunc(4, 5)
-        9
-        >>> myfunc(4, 2)
-          Calcing 4 + 2 = 6
-        6
-
-        The cache size is returned by :any:`AnyCache.size`.
-
-        >>> ac.size
-        10
-
-        The cache size can be limited via `maxsize`.
-        A `maxsize` of `0` disables caching.
-
-        >>> ac.maxsize = 0
-        >>> myfunc(4, 5)
-          Calcing 4 + 5 = 9
-        9
-
-        The cache is preserved in this case, and needs to be cleared explicitly:
-
-        >>> ac.size
-        10
-        >>> ac.clear()
-        >>> ac.size
-        0
-        """
         self.cachedir = cachedir
         self.maxsize = maxsize
 
@@ -134,7 +135,7 @@ class AnyCache(object):
         :any:`AnyCache` instances on the same `cachedir` share the same cache.
         """
         if self.__cachedir is None:
-            self.__cachedir = pathlib.Path(tempfile.mkdtemp(suffix='.anycache'))
+            self.__cachedir = pathlib.Path(tempfile.mkdtemp(suffix=".anycache"))
         return self.__cachedir
 
     @cachedir.setter
@@ -187,8 +188,8 @@ class AnyCache(object):
           Deps of 2 + 7 = 9
         9
         """
-        def decorator(func):
 
+        def decorator(func):
             def is_outdated(*args, **kwargs):
                 funcinfo = _FuncInfo(func, args, kwargs, depfilefunc)
                 return self._is_outdated(funcinfo)
@@ -214,6 +215,7 @@ class AnyCache(object):
             wrapped.get_ident = get_ident
 
             return wrapped
+
         return decorator
 
     def is_outdated(self, func, *args, **kwargs):
@@ -292,8 +294,7 @@ class AnyCache(object):
         except AttributeError:  # pragma: no cover
             cachedir = None
         if cachedir and cachedir.exists():
-            if logging:  # pragma: no cover
-                logging.getLogger(__name__).debug("CLEARING cache '%s" % cachedir)
+            logging.getLogger(__name__).debug("CLEARING cache '%s", cachedir)
             for file in cachedir.glob("*"):
                 file.unlink()
             cachedir.rmdir()
@@ -302,7 +303,7 @@ class AnyCache(object):
     def size(self):
         """Return total size of all cache files."""
         if self.cachedir.exists():
-            size = sum([file.stat().st_size for file in self.cachedir.glob("*")])
+            size = sum(file.stat().st_size for file in self.cachedir.glob("*"))
         else:
             size = 0
         return size
@@ -362,12 +363,12 @@ class AnyCache(object):
         outdated = True
         if ce.dep.exists() and ce.data.exists():
             data_mtime = ce.data.stat().st_mtime
+            # pylint: disable=broad-exception-caught
             try:
-                with open(str(ce.dep), "r") as depfile:
-                    outdated = any([(pathlib.Path(line.rstrip()).stat().st_mtime > data_mtime)
-                                    for line in depfile])
+                with open(str(ce.dep), "r", encoding="utf-8") as depfile:
+                    outdated = any((pathlib.Path(line.rstrip()).stat().st_mtime > data_mtime) for line in depfile)
             except Exception:
-                logger.warn("CORRUPT cache dep '%s'" % (ce.dep))
+                logger.warning("CORRUPT cache dep '%s'", ce.dep)
         return outdated
 
     @staticmethod
@@ -376,19 +377,21 @@ class AnyCache(object):
         with ce.lock:
             if not AnyCache.__is_outdated(logger, ce):
                 with open(str(ce.data), "rb") as cachefile:
+                    # pylint: disable=broad-exception-caught
                     try:
                         result, valid = pickle.load(cachefile), True
-                        logger.info("READING cache entry '%s'" % (ce.ident))
+                        logger.info("READING cache entry '%s'", ce.ident)
                     except Exception as exc:
-                        logger.warn("CORRUPT cache entry '%s'. %r" % (ce.data, exc))
+                        logger.warning("CORRUPT cache entry '%s'. %r", ce.data, exc)
                 ce.data.touch()
         return valid, result
 
     @staticmethod
     def __write(logger, ce, result, deps):
-        logger.info("WRITING cache entry '%s'" % (ce.ident))
+        logger.info("WRITING cache entry '%s'", ce.ident)
         # we need to lock the cache for write
         # writing takes a long time, so we are writing to temporay files, lock and copy over.
+        # pylint: disable=broad-exception-caught
         try:
             with tempfile.NamedTemporaryFile("wb", prefix="anycache-", suffix=_CACHE_SUFFIX) as datatmpfile:
                 with tempfile.NamedTemporaryFile("w", prefix="anycache-", suffix=_DEP_SUFFIX) as deptmpfile:
@@ -404,7 +407,7 @@ class AnyCache(object):
                         shutil.copyfile(datatmpfile.name, str(ce.data))
                         shutil.copyfile(deptmpfile.name, str(ce.dep))
         except Exception as exc:  # pragma: no cover
-            logger.warn("FAILED cache write '%s'. %r" % (ce.data, exc))
+            logger.warning("FAILED cache write '%s'. %r", ce.data, exc)
 
     @staticmethod
     def __tidyup(logger, cachedir, maxsize):
@@ -424,7 +427,7 @@ class AnyCache(object):
                 ce.data.unlink()
             if ce.dep.exists():
                 ce.dep.unlink()
-        logger.info("REMOVING cache entry '%s'" % (ce.ident))
+        logger.info("REMOVING cache entry '%s'", ce.ident)
 
 
 __DEFAULT_CACHE = None
@@ -493,6 +496,7 @@ def anycache(cachedir=None, maxsize=None, depfilefunc=None):
 
 def get_defaultcache():
     """Return unlimited default :any:`AnyCache` instance."""
+    # pylint: disable=global-statement
     global __DEFAULT_CACHE
     if __DEFAULT_CACHE is None:
         __DEFAULT_CACHE = AnyCache()
