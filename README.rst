@@ -41,8 +41,7 @@
 .. image:: https://img.shields.io/github/issues-pr-closed/c0fec0de/anycache.svg
    :target: https://github.com/c0fec0de/anycache/pulls?q=is%3Apr+is%3Aclosed
 
-Links
-=====
+To cache the result of a function, use the global unlimited anycache:
 
 * Documentation_
 * PyPI_
@@ -60,8 +59,6 @@ Links
 .. _Contributors: https://github.com/c0fec0de/anycache/graphs/contributors
 
 .. _getting_started:
-
-To cache the result of a function, use the global unlimited anycache:
 
 >>> from anycache import anycache
 >>> @anycache()

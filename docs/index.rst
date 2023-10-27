@@ -48,9 +48,7 @@ Cache Any Python Object
 .. image:: https://img.shields.io/github/issues-pr-closed/c0fec0de/anycache.svg
    :target: https://github.com/c0fec0de/anycache/pulls?q=is%3Apr+is%3Aclosed
 
-
-Links
-=====
+Cache any python object to file using improved pickling
 
 * Documentation_
 * PyPI_
@@ -58,6 +56,11 @@ Links
 * Changelog_
 * Issues_
 * Contributors_
+.. toctree::
+   :maxdepth: 2
+
+   installation
+   api
 
 .. _anycache: https://anycache.readthedocs.io/en/2.1.0/
 .. _Documentation: https://anycache.readthedocs.io/en/2.1.0/
@@ -66,15 +69,6 @@ Links
 .. _Changelog: https://github.com/c0fec0de/anycache/releases
 .. _Issues: https://github.com/c0fec0de/anycache/issues
 .. _Contributors: https://github.com/c0fec0de/anycache/graphs/contributors
-
-
-Cache any python object to file using improved pickling
-
-.. toctree::
-   :maxdepth: 2
-
-   installation
-   api
 
 
 Getting started
