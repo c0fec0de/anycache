@@ -359,7 +359,7 @@ class AnyCache:
             self.cachedir.mkdir(parents=True)
         except FileExistsError:
             pass
-    
+
     def __is_outdated(
         self,
         logger: logging.Logger,
@@ -367,20 +367,19 @@ class AnyCache:
     ) -> bool:
         return any(
             [
-                self.__is_age_outdated(logger=logger, ce=ce),
+                self.__is_age_outdated(ce=ce),
                 self.__is_source_outdated(logger=logger, ce=ce),
             ]
         )
-    
+
     def __is_age_outdated(
         self,
-        logger: logging.Logger,
         ce: _CacheEntry,
     ) -> bool:
         # If no maximum age is given, then the cache cannot be outdated.
         if self.maxage is None:
             return False
-        
+
         # If the cache data does not exists, then it cannot be outdated.
         if not ce.data.exists():
             return False

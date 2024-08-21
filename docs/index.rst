@@ -56,6 +56,7 @@ Cache any python object to file using improved pickling
 * Changelog_
 * Issues_
 * Contributors_
+
 .. toctree::
    :maxdepth: 2
 
