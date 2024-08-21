@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "anycache"
-version = "2.1.0"
+version = "2.2.0"
 description = "Cache any python object to file using improved pickling"
 authors = [
     "c0fec0de <c0fec0de@gmail.com>"
