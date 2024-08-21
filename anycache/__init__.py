@@ -38,9 +38,17 @@ class _CacheInfo:
     """Cache Information Contianer."""
 
     def __init__(self, cachedir):
-        datafilepaths = cachedir.glob("*%s" % _CACHE_SUFFIX)
-        self.cacheentries = [_CacheInfo.create_ce_from_datafilepath(d) for d in datafilepaths]
-        self.cacheentryinfos = [_CacheInfo.create_cei(ce) for ce in self.cacheentries]
+        self.cacheentries = entries = []
+        self.cacheentryinfos = infos = []
+        for datafilepath in cachedir.glob("*%s" % _CACHE_SUFFIX):
+            try:
+                entry = _CacheInfo.create_ce_from_datafilepath(datafilepath)
+                info = _CacheInfo.create_cei(entry)
+            except FileNotFoundError:
+                # Due to concurrent accesses, files might vanish
+                continue
+            entries.append(entry)
+            infos.append(info)
         self.totalsize = sum(cei.size for cei in self.cacheentryinfos)
 
     @staticmethod
@@ -461,9 +469,9 @@ class AnyCache:
     def __remove(logger, ce):
         with ce.lock:
             if ce.data.exists():
-                ce.data.unlink()
+                ce.data.unlink(missing_ok=True)
             if ce.dep.exists():
-                ce.dep.unlink()
+                ce.dep.unlink(missing_ok=True)
         logger.info("REMOVING cache entry '%s'", ce.ident)
 
 
