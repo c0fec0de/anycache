@@ -25,13 +25,14 @@ def test_maxage_none():
     assert myfunc(4, 5) == 9
     assert myfunc.callcount == 1
 
+
 @pytest.mark.parametrize(
     argnames=("maxage_seconds", "wait_seconds"),
     argvalues=[
         (1, 5),
         (2, 5),
         (3, 5),
-    ]
+    ],
 )
 def test_maxage_expired_cache(
     maxage_seconds: int,
@@ -45,13 +46,13 @@ def test_maxage_expired_cache(
     def myfunc():
         # count the number of calls
         myfunc.callcount += 1
-        return datetime.datetime.now(tz=datetime.UTC)
+        return datetime.datetime.now(tz=datetime.timezone.utc)
 
     myfunc.callcount = 0
 
     # Ensure that the returned datetime value is within the acceptable threshold from
     # when the function was invoked and that the function was invoked once.
-    difference = datetime.datetime.now(tz=datetime.UTC) - myfunc()
+    difference = datetime.datetime.now(tz=datetime.timezone.utc) - myfunc()
     assert difference <= datetime.timedelta(seconds=threshold_seconds)
     assert myfunc.callcount == 1
 
@@ -60,9 +61,10 @@ def test_maxage_expired_cache(
 
     # Ensure that the returned datetime value is within the acceptable threshold from
     # when the function was invoked and that the function was invoked a second time.
-    difference = datetime.datetime.now(tz=datetime.UTC) - myfunc()
+    difference = datetime.datetime.now(tz=datetime.timezone.utc) - myfunc()
     assert difference <= datetime.timedelta(seconds=threshold_seconds)
     assert myfunc.callcount == 2
+
 
 @pytest.mark.parametrize(
     argnames=("maxage_seconds", "wait_seconds"),
@@ -70,7 +72,7 @@ def test_maxage_expired_cache(
         (60, 1),
         (60, 2),
         (60, 3),
-    ]
+    ],
 )
 def test_maxage_nonexpired_cache(
     maxage_seconds: int,
@@ -84,13 +86,13 @@ def test_maxage_nonexpired_cache(
     def myfunc():
         # count the number of calls
         myfunc.callcount += 1
-        return datetime.datetime.now(tz=datetime.UTC)
+        return datetime.datetime.now(tz=datetime.timezone.utc)
 
     myfunc.callcount = 0
 
     # Ensure that the returned datetime value is within the acceptable threshold from
     # when the function was invoked and that the function was invoked once.
-    now = datetime.datetime.now(tz=datetime.UTC)
+    now = datetime.datetime.now(tz=datetime.timezone.utc)
     difference = now - myfunc()
     assert difference <= datetime.timedelta(seconds=threshold_seconds)
     assert myfunc.callcount == 1
