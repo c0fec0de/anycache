@@ -1,6 +1,7 @@
 """Cache any python object to file."""
 
 import collections
+import datetime
 import hashlib
 import logging
 import pathlib
@@ -123,8 +124,9 @@ class AnyCache:
     0
     """
 
-    def __init__(self, cachedir=None, maxsize=None):
+    def __init__(self, cachedir=None, maxage=None, maxsize=None):
         self.cachedir = cachedir
+        self.maxage = maxage
         self.maxsize = maxsize
 
     @property
@@ -314,7 +316,7 @@ class AnyCache:
         ce = _CacheInfo.create_ce_from_ident(self.cachedir, ident)
         self._ensure_cachedir()
         # try to read
-        valid, result = AnyCache.__read(logger, ce)
+        valid, result = self.__read(logger, ce)
         if not valid:
             func, args, kwargs, depfilefunc = funcinfo
             # execute
@@ -333,7 +335,7 @@ class AnyCache:
         ce = _CacheInfo.create_ce_from_ident(self.cachedir, ident)
         self._ensure_cachedir()
         with ce.lock:
-            is_outdated = AnyCache.__is_outdated(logger, ce)
+            is_outdated = self.__is_outdated(logger, ce)
         return is_outdated
 
     def _remove(self, funcinfo):
@@ -357,9 +359,46 @@ class AnyCache:
             self.cachedir.mkdir(parents=True)
         except FileExistsError:
             pass
+    
+    def __is_outdated(
+        self,
+        logger: logging.Logger,
+        ce: _CacheEntry,
+    ) -> bool:
+        return any(
+            [
+                self.__is_age_outdated(logger=logger, ce=ce),
+                self.__is_source_outdated(logger=logger, ce=ce),
+            ]
+        )
+    
+    def __is_age_outdated(
+        self,
+        logger: logging.Logger,
+        ce: _CacheEntry,
+    ) -> bool:
+        # If no maximum age is given, then the cache cannot be outdated.
+        if self.maxage is None:
+            return False
+        
+        # If the cache data does not exists, then it cannot be outdated.
+        if not ce.data.exists():
+            return False
 
-    @staticmethod
-    def __is_outdated(logger, ce):
+        # Determine the datetime of when the cache entry was last touched.
+        last = datetime.datetime.fromtimestamp(
+            timestamp=ce.data.stat().st_mtime,
+            tz=datetime.timezone.utc,
+        )
+
+        # Determine the age of the cache relative to the current time.
+        age = datetime.datetime.now(tz=datetime.timezone.utc) - last
+
+        # Return whether or not the cache is older than the maximum age allowed.
+        return age > self.maxage
+
+    @classmethod
+    def __is_source_outdated(cls, logger, ce):
         outdated = True
         if ce.dep.exists() and ce.data.exists():
             data_mtime = ce.data.stat().st_mtime
@@ -371,11 +410,10 @@ class AnyCache:
                 logger.warning("CORRUPT cache dep '%s'", ce.dep)
         return outdated
 
-    @staticmethod
-    def __read(logger, ce):
+    def __read(self, logger, ce):
         valid, result = False, None
         with ce.lock:
-            if not AnyCache.__is_outdated(logger, ce):
+            if not self.__is_outdated(logger, ce):
                 with open(str(ce.data), "rb") as cachefile:
                     # pylint: disable=broad-exception-caught
                     try:
