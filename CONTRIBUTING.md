@@ -24,34 +24,11 @@ source .venv/bin/activate
 ### Test Your Changes
 
 ```bash
-# test
-tox
+make all
 ```
 
 ### Release
 
-```bash
-prev_version=$(poetry version -s)
+Create release via 
 
-# Ensure main
-git checkout main
-git pull
-
-# Version Bump
-poetry version minor
-# OR
-poetry version patch
-
-# Commit, Tag and Push
-version=$(poetry version -s)
-
-sed "s/$prev_version/$version/g" -i README.rst
-sed "s/$prev_version/$version/g" -i docs/index.rst
-
-git commit -m"version bump to ${version}" pyproject.toml README.rst docs/index.rst
-git tag "${version}" -m "Release ${version}"
-git push
-git push --tags
-
-# Publishing is handled by CI
-```
+    https://github.com/c0fec0de/anycache/releases/new

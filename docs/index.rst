@@ -17,24 +17,8 @@ Cache Any Python Object
 .. image:: https://readthedocs.org/projects/anycache/badge/?version=
     :target: https://anycache.readthedocs.io/en//?badge=
 
-.. image:: https://api.codeclimate.com/v1/badges/e6d325d6fd23a93aab20/maintainability
-   :target: https://codeclimate.com/github/c0fec0de/anycache/maintainability
-   :alt: Maintainability
-
 .. image:: https://img.shields.io/pypi/pyversions/anycache.svg
    :target: https://pypi.python.org/pypi/anycache
-
-.. image:: https://img.shields.io/badge/code%20style-pep8-brightgreen.svg
-   :target: https://www.python.org/dev/peps/pep-0008/
-
-.. image:: https://img.shields.io/badge/code%20style-pep257-brightgreen.svg
-   :target: https://www.python.org/dev/peps/pep-0257/
-
-.. image:: https://img.shields.io/badge/linter-pylint-%231674b1?style=flat
-   :target: https://www.pylint.org/
-
-.. image:: https://img.shields.io/badge/code%20style-black-000000.svg
-   :target: https://github.com/psf/black
 
 .. image:: https://img.shields.io/github/contributors/c0fec0de/anycache.svg
    :target: https://github.com/c0fec0de/anycache/graphs/contributors/
@@ -63,9 +47,9 @@ Cache any python object to file using improved pickling
    installation
    api
 
-.. _anycache: https://anycache.readthedocs.io/en/2.1.0/
-.. _Documentation: https://anycache.readthedocs.io/en/2.1.0/
-.. _PyPI: https://pypi.org/project/anycache/2.1.0/
+.. _anycache: https://anycache.readthedocs.io/en/stable/
+.. _Documentation: https://anycache.readthedocs.io/en/stable/
+.. _PyPI: https://pypi.org/project/anycache
 .. _GitHub: https://github.com/c0fec0de/anycache
 .. _Changelog: https://github.com/c0fec0de/anycache/releases
 .. _Issues: https://github.com/c0fec0de/anycache/issues

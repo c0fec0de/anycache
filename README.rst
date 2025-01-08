@@ -11,23 +11,11 @@
 .. image:: https://coveralls.io/repos/github/c0fec0de/anycache/badge.svg
     :target: https://coveralls.io/github/c0fec0de/anycache
 
-.. image:: https://readthedocs.org/projects/anycache/badge/?version=2.1.0
-    :target: https://anycache.readthedocs.io/en/2.1.0/?badge=2.1.0
+.. image:: https://readthedocs.org/projects/anycache/badge
+    :target: https://anycache.readthedocs.io/en/stable
 
 .. image:: https://img.shields.io/pypi/pyversions/anycache.svg
    :target: https://pypi.python.org/pypi/anycache
-
-.. image:: https://img.shields.io/badge/code%20style-pep8-brightgreen.svg
-   :target: https://www.python.org/dev/peps/pep-0008/
-
-.. image:: https://img.shields.io/badge/code%20style-pep257-brightgreen.svg
-   :target: https://www.python.org/dev/peps/pep-0257/
-
-.. image:: https://img.shields.io/badge/linter-pylint-%231674b1?style=flat
-   :target: https://www.pylint.org/
-
-.. image:: https://img.shields.io/badge/code%20style-black-000000.svg
-   :target: https://github.com/psf/black
 
 .. image:: https://img.shields.io/github/contributors/c0fec0de/anycache.svg
    :target: https://github.com/c0fec0de/anycache/graphs/contributors/
