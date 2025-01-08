@@ -1,4 +1,5 @@
 """Test Basic."""
+
 from anycache import AnyCache, anycache, get_defaultcache
 
 
@@ -117,7 +118,7 @@ def test_corrupt_cache(tmp_path):
     assert myfunc.callcount == 1
 
     # corrupt cache
-    cachefilepath = list(cachedir.glob("*.cache"))[0]
+    cachefilepath = next(iter(cachedir.glob("*.cache")))
     with open(str(cachefilepath), "w", encoding="utf-8") as cachefile:
         cachefile.write("foo")
 
@@ -128,7 +129,7 @@ def test_corrupt_cache(tmp_path):
     assert myfunc.callcount == 2
 
     # corrupt dep
-    depfilepath = list(cachedir.glob("*.dep"))[0]
+    depfilepath = next(iter(cachedir.glob("*.dep")))
     with open(str(depfilepath), "w", encoding="utf-8") as depfile:
         depfile.write("foo")
 

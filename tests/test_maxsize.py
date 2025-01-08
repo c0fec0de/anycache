@@ -1,4 +1,5 @@
 """Size Testing."""
+
 from time import sleep
 
 from anycache import AnyCache

@@ -11,3 +11,4 @@ dist/
 docs/_readthedocs/
 poetry.lock
 setup.py
+.python-version
