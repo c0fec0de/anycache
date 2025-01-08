@@ -1,4 +1,5 @@
 """Persistency Testing."""
+
 from pathlib import Path
 
 from anycache import AnyCache

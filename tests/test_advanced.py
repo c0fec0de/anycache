@@ -5,7 +5,6 @@ from anycache import AnyCache
 
 def test_is_outdated_and_remove():
     """is_outdated(), remove()."""
-
     ac = AnyCache()
 
     @ac.anycache()

@@ -1,4 +1,5 @@
 """File Dependency Testing."""
+
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from time import sleep
@@ -10,7 +11,6 @@ TOUCHTIME = 2
 
 def test_filedepfunc():
     """File dependencies."""
-
     with NamedTemporaryFile("w") as depfile1:
         with NamedTemporaryFile("w") as depfile2:
             depfile1.write("dep1")

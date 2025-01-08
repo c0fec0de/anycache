@@ -1,9 +1,14 @@
-[tool.poetry]
+[project]
 name = "anycache"
 version = "2.2.0"
 description = "Cache any python object to file using improved pickling"
+requires-python = ">=3.8"
+dependencies = [
+    "dill>=0.3.7",
+    "filelock>=3.13.0",
+]
 authors = [
-    "c0fec0de <c0fec0de@gmail.com>"
+    {name="Daniel Jakschik", email="c0fec0de@gmail.com"}
 ]
 readme = "README.rst"
 license = "Apache-2.0"
@@ -23,91 +28,56 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/c0fec0de/anycache"
-"Documentation" = "https://anycache.readthedocs.io/en/latest/"
-"Bug Tracker" = "https://github.com/c0fec0de/anycache/issues"
-
-[tool.poetry.dependencies]
-python = ">=3.8, < 4"
-filelock = "^3.13.0"
-dill = "^0.3.7"
-
-[tool.poetry.group.test.dependencies]
-black = "^23.10.1"
-coverage = "^7.3.2"
-isort = "^5.12.0"
-pylint = "^3.0.2"
-pytest = "^7.4.3"
-pyyaml = "^6.0.1"
-
-[tool.poetry.group.doc.dependencies]
-sphinx = '^5.1.1'
-sphinx-rtd-theme = "^1.0.0"
+homepage = "https://github.com/c0fec0de/anycache"
+repository = "https://github.com/c0fec0de/anycache"
+documentation = "https://anycache.readthedocs.io/en/latest/"
+bugs = "https://github.com/c0fec0de/anycache/issues"
 
 [build-system]
-requires = ["poetry_core>=1.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
 
+[dependency-groups]
+dev = [
+    "coverage>=7.6.1",
+    "pre-commit>=3.5.0",
+    "pytest>=8.3.4",
+    "sphinx>=7.1.2",
+    "sphinx-rtd-theme>=3.0.2",
+]
 
-[tool.black]
+# RUFF
+[tool.ruff]
 line-length = 120
-include = '\.pyi?$'
-exclude = '''
-/(
-    \.eggs
-  | \.git
-  | \.mypy_cache
-  | \.venv
-  | \.tox
-  | build
-  | dist
-  | setup\.py
-)/
-'''
+fix = true
+target-version = "py38"
 
-[tool.isort]
-profile = "black"
-line_length = 120
-
-[tool.coverage.report]
-exclude_lines = [
-    'return NotImplemented',
-    'raise NotImplementedError()',
-    'pragma: no cover',
+[tool.ruff.lint]
+select = [
+    # isort
+    "I",
+    # pyflakes
+    "F",
+    # pycodestyle
+    "E", "F",
+    # pydocstyle
+    "D",
+    # pep8-naming
+    "N",
+    # RUFF specifi
+    "RUF",
+    # PerfLint
+    "PERF",
+    # flynt
+    "FLY",
+]
+ignore = [
+    "D211", "D213", "D107", "D105",
 ]
 
-
-[tool.pylint.'MESSAGES CONTROL']
-max-line-length = 120
-disable = [
-    'duplicate-code',
-    'consider-using-f-string',
-]
-
-
-[tool.tox]
-legacy_tox_ini = """
-[tox]
-envlist = py
-isolated_build = True
-
-[tox:.package]
-basepython = python3
-
-[testenv]
-allowlist_externals = *
-
-commands =
-    poetry install --with=test --with=doc
-    poetry run black .
-    poetry run isort .
-    poetry run coverage run --source=anycache --branch -m pytest --doctest-glob=docs/*.rst --doctest-modules --ignore-glob=tests/testdata* --ignore=docs/conf.py --log-level=DEBUG -vv --junitxml=report.xml
-    poetry run coverage report
-    poetry run coverage html
-    poetry run coverage xml
-    poetry run pylint anycache tests
-    poetry run make html -C docs
-"""
+[tool.ruff.lint.pydocstyle]
+convention = "google"

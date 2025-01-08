@@ -34,7 +34,6 @@ _LOCK_SUFFIX = ".lock"
 
 
 class _CacheInfo:
-
     """Cache Information Contianer."""
 
     def __init__(self, cachedir):
@@ -77,8 +76,7 @@ class _CacheInfo:
 
 
 class AnyCache:
-    """
-    Cache for python objects.
+    """Cache for python objects.
 
     Keyword Args:
         cachedir: Directory for cached python objects. :any:`AnyCache`
@@ -139,8 +137,7 @@ class AnyCache:
 
     @property
     def cachedir(self):
-        """
-        Cache directory use for all cache files.
+        """Cache directory use for all cache files.
 
         :any:`AnyCache` instances on the same `cachedir` share the same cache.
         """
@@ -162,8 +159,7 @@ class AnyCache:
             self.clear()
 
     def anycache(self, depfilefunc=None):
-        """
-        Decorator to cache result of function depending on arguments.
+        """Decorator to cache result of function depending on arguments.
 
         Keyword Args:
             depfilefunc: Dependency file function (see example below)
@@ -229,8 +225,7 @@ class AnyCache:
         return decorator
 
     def is_outdated(self, func, *args, **kwargs):
-        """
-        Return `True` if cache is outdated for `func` used with `args` and `kwargs`.
+        """Return `True` if cache is outdated for `func` used with `args` and `kwargs`.
 
         >>> from anycache import AnyCache
         >>> ac = AnyCache()
@@ -249,8 +244,7 @@ class AnyCache:
         return func.is_outdated(*args, **kwargs)
 
     def remove(self, func, *args, **kwargs):
-        """
-        Remove cache data for `func` used with `args` and `kwargs`.
+        """Remove cache data for `func` used with `args` and `kwargs`.
 
         >>> from anycache import AnyCache
         >>> ac = AnyCache()
@@ -274,8 +268,7 @@ class AnyCache:
         return func.remove(*args, **kwargs)
 
     def get_ident(self, func, *args, **kwargs):
-        """
-        Return identification string for `func` used with `args` and `kwargs`.
+        """Return identification string for `func` used with `args` and `kwargs`.
 
         >>> from anycache import AnyCache
         >>> ac = AnyCache()
@@ -406,16 +399,17 @@ class AnyCache:
 
     @classmethod
     def __is_source_outdated(cls, logger, ce):
-        outdated = True
         if ce.dep.exists() and ce.data.exists():
             data_mtime = ce.data.stat().st_mtime
             # pylint: disable=broad-exception-caught
             try:
                 with open(str(ce.dep), "r", encoding="utf-8") as depfile:
-                    outdated = any((pathlib.Path(line.rstrip()).stat().st_mtime > data_mtime) for line in depfile)
-            except Exception:
-                logger.warning("CORRUPT cache dep '%s'", ce.dep)
-        return outdated
+                    return any((pathlib.Path(line.rstrip()).stat().st_mtime > data_mtime) for line in depfile)
+            except FileNotFoundError:
+                return True
+            except Exception as exc:
+                logger.warning("CORRUPT cache dep '%s' (%r)", ce.dep, exc)
+        return True
 
     def __read(self, logger, ce):
         valid, result = False, None
@@ -479,8 +473,7 @@ __DEFAULT_CACHE = None
 
 
 def anycache(cachedir=None, maxsize=None, depfilefunc=None):
-    """
-    Decorator to cache result of function depending on arguments.
+    """Decorator to cache result of function depending on arguments.
 
     This decorator uses one unlimited global cache within one python run.
     Different anycached functions have different cache name spaces and do
