@@ -29,6 +29,6 @@ make all
 
 ### Release
 
-Create release via 
+Create release via
 
     https://github.com/c0fec0de/anycache/releases/new

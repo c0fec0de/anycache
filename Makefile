@@ -9,7 +9,7 @@ help:
 	@echo "  test:        Run pytest"
 	@echo "  doc:         Build Documentation"
 	@echo ""
-	@echo "  clean:       All Temporary Files (from .gitignore)"
+	@echo "  clean:       Remove all Temporary Files (from .gitignore)"
 	@echo ""
 
 .PHONY: all

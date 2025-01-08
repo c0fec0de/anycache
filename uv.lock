@@ -44,7 +44,7 @@ wheels = [
 
 [[package]]
 name = "anycache"
-version = "2.2.0"
+version = "2.3.1.dev1+g13bc2c0.d20250108"
 source = { editable = "." }
 dependencies = [
     { name = "dill" },
