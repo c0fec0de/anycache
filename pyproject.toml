@@ -1,6 +1,6 @@
 [project]
 name = "anycache"
-version = "2.2.0"
+dynamic = ["version"]
 description = "Cache any python object to file using improved pickling"
 requires-python = ">=3.8"
 dependencies = [
@@ -40,6 +40,9 @@ bugs = "https://github.com/c0fec0de/anycache/issues"
 [build-system]
 requires = ["pdm-backend"]
 build-backend = "pdm.backend"
+
+[tool.pdm.version]
+source = "scm"
 
 [dependency-groups]
 dev = [
