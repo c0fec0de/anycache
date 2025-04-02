@@ -1,4 +1,29 @@
-"""Cache any python object to file."""
+#
+# MIT License
+#
+# Copyright (c) 2017-2025 c0fec0de
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+"""
+Cache any python object to file using improved pickling.
+"""
 
 import collections
 import datetime
@@ -6,8 +31,9 @@ import hashlib
 import logging
 import pathlib
 import shutil
-import sys
 import tempfile
+from pathlib import Path
+from typing import Callable, Optional
 
 import dill as pickle  # improved pickle
 import filelock
@@ -16,16 +42,7 @@ __all__ = ("AnyCache", "anycache", "get_defaultcache")
 
 _CacheEntry = collections.namedtuple("_CacheEntry", ("ident", "data", "dep", "lock"))
 _CacheEntryInfo = collections.namedtuple("_CacheEntryInfo", ("ce", "mtime", "size"))
-_FuncInfo = collections.namedtuple("FuncInfo", ("func", "args", "kwargs", "depfilefunc"))
-
-if sys.version_info[0] < 3:  # pragma: no cover
-    _bytes = bytes
-    # pylint: disable=redefined-builtin
-    FileExistsError = OSError
-else:  # pragma: no cover
-
-    def _bytes(name):
-        return bytes(name, encoding="utf-8")
+_FuncInfo = collections.namedtuple("_FuncInfo", ("func", "args", "kwargs", "depfilefunc"))
 
 
 _CACHE_SUFFIX = ".cache"
@@ -34,12 +51,12 @@ _LOCK_SUFFIX = ".lock"
 
 
 class _CacheInfo:
-    """Cache Information Contianer."""
+    """Cache Information Container."""
 
     def __init__(self, cachedir):
         self.cacheentries = entries = []
         self.cacheentryinfos = infos = []
-        for datafilepath in cachedir.glob("*%s" % _CACHE_SUFFIX):
+        for datafilepath in cachedir.glob(f"*{_CACHE_SUFFIX}"):
             try:
                 entry = _CacheInfo.create_ce_from_datafilepath(datafilepath)
                 info = _CacheInfo.create_cei(entry)
@@ -79,8 +96,9 @@ class AnyCache:
     """Cache for python objects.
 
     Keyword Args:
-        cachedir: Directory for cached python objects. :any:`AnyCache`
-                    instances on the same `cachedir` share the same cache.
+        cachedir: Directory for cached python objects. `AnyCache`
+                  instances on the same `cachedir` share the same cache.
+        maxage: Maximum cache item age in seconds.
         maxsize: Maximum cache size in bytes.
                     `None` does not limit the cache size.
                     `0` disables caching.
@@ -90,47 +108,52 @@ class AnyCache:
                     `maxsize`. At maximum twice as large as the maximum object
                     size.
 
-    The :any:`AnyCache` instance mainly serves the :any:`AnyCache.anycache`
+    The `AnyCache` instance mainly serves the `AnyCache.anycache`
     method for caching the result of functions.
 
-    >>> from anycache import AnyCache
-    >>> ac = AnyCache()
-    >>> @ac.anycache()
-    ... def myfunc(posarg, kwarg=3):
-    ...     print("  Calcing %r + %r = %r" % (posarg, kwarg, posarg + kwarg))
-    ...     return posarg + kwarg
-    >>> myfunc(4, 5)
-      Calcing 4 + 5 = 9
-    9
-    >>> myfunc(4, 5)
-    9
-    >>> myfunc(4, 2)
-      Calcing 4 + 2 = 6
-    6
+        >>> from anycache import AnyCache
+        >>> ac = AnyCache()
+        >>> @ac.anycache()
+        ... def myfunc(posarg, kwarg=3):
+        ...     print("Calcing %r + %r = %r" % (posarg, kwarg, posarg + kwarg))
+        ...     return posarg + kwarg
+        >>> myfunc(4, 5)
+        Calcing 4 + 5 = 9
+        9
+        >>> myfunc(4, 5)
+        9
+        >>> myfunc(4, 2)
+        Calcing 4 + 2 = 6
+        6
 
-    The cache size is returned by :any:`AnyCache.size`.
+    The cache size is returned by `AnyCache.size`.
 
-    >>> ac.size
-    10
+        >>> ac.size
+        10
 
     The cache size can be limited via `maxsize`.
     A `maxsize` of `0` disables caching.
 
-    >>> ac.maxsize = 0
-    >>> myfunc(4, 5)
-      Calcing 4 + 5 = 9
-    9
+        >>> ac.maxsize = 0
+        >>> myfunc(4, 5)
+        Calcing 4 + 5 = 9
+        9
 
     The cache is preserved in this case, and needs to be cleared explicitly:
 
-    >>> ac.size
-    10
-    >>> ac.clear()
-    >>> ac.size
-    0
+        >>> ac.size
+        10
+        >>> ac.clear()
+        >>> ac.size
+        0
     """
 
-    def __init__(self, cachedir=None, maxage=None, maxsize=None):
+    def __init__(
+        self,
+        cachedir: Optional[Path] = None,
+        maxage: Optional[datetime.timedelta] = None,
+        maxsize: Optional[int] = None,
+    ):
         self.cachedir = cachedir
         self.maxage = maxage
         self.maxsize = maxsize
@@ -139,7 +162,7 @@ class AnyCache:
     def cachedir(self):
         """Cache directory use for all cache files.
 
-        :any:`AnyCache` instances on the same `cachedir` share the same cache.
+        `AnyCache` instances on the same `cachedir` share the same cache.
         """
         if self.__cachedir is None:
             self.__cachedir = pathlib.Path(tempfile.mkdtemp(suffix=".anycache"))
@@ -158,23 +181,25 @@ class AnyCache:
         if not self.__explicit_cachedir:
             self.clear()
 
-    def anycache(self, depfilefunc=None):
+    def anycache(self, depfilefunc: Optional[Callable] = None):
         """Decorator to cache result of function depending on arguments.
 
         Keyword Args:
             depfilefunc: Dependency file function (see example below)
 
-        >>> from anycache import AnyCache
-        >>> ac = AnyCache()
-        >>> @ac.anycache()
-        ... def myfunc(posarg, kwarg=3):
-        ...     print("  Calcing %r + %r = %r" % (posarg, kwarg, posarg + kwarg))
-        ...     return posarg + kwarg
-        >>> myfunc(2, 5)
-          Calcing 2 + 5 = 7
-        7
-        >>> myfunc(2, 5)
-        7
+        Example:
+
+            >>> from anycache import AnyCache
+            >>> ac = AnyCache()
+            >>> @ac.anycache()
+            ... def myfunc(posarg, kwarg=3):
+            ...     print("Calcing %r + %r = %r" % (posarg, kwarg, posarg + kwarg))
+            ...     return posarg + kwarg
+            >>> myfunc(2, 5)
+            Calcing 2 + 5 = 7
+            7
+            >>> myfunc(2, 5)
+            7
 
         File I/O is not tracked by the decorator.
         Instead a function needs to be implemented, which returns the paths
@@ -182,17 +207,17 @@ class AnyCache:
         The `depfilefunc` is called with the function result and all arguments.
         The following example, depends on the path of the source code itself:
 
-        >>> def mydepfilefunc(result, posarg, kwarg=3):
-        ...     print("  Deps of %r + %r = %r" % (posarg, kwarg, result))
-        ...     return [__file__]
-        >>> @ac.anycache(depfilefunc=mydepfilefunc)
-        ... def myfunc(posarg, kwarg=3):
-        ...     print("  Calcing %r + %r = %r" % (posarg, kwarg, posarg + kwarg))
-        ...     return posarg + kwarg
-        >>> myfunc(2, 7)
-          Calcing 2 + 7 = 9
-          Deps of 2 + 7 = 9
-        9
+            >>> def mydepfilefunc(result, posarg, kwarg=3):
+            ...     print("Deps of %r + %r = %r" % (posarg, kwarg, result))
+            ...     return [__file__]
+            >>> @ac.anycache(depfilefunc=mydepfilefunc)
+            ... def myfunc(posarg, kwarg=3):
+            ...     print("Calcing %r + %r = %r" % (posarg, kwarg, posarg + kwarg))
+            ...     return posarg + kwarg
+            >>> myfunc(2, 7)
+            Calcing 2 + 7 = 9
+            Deps of 2 + 7 = 9
+            9
         """
 
         def decorator(func):
@@ -227,65 +252,69 @@ class AnyCache:
     def is_outdated(self, func, *args, **kwargs):
         """Return `True` if cache is outdated for `func` used with `args` and `kwargs`.
 
-        >>> from anycache import AnyCache
-        >>> ac = AnyCache()
-        >>> @ac.anycache()
-        ... def myfunc(posarg, kwarg=3):
-        ...     print("  Calcing %r + %r = %r" % (posarg, kwarg, posarg + kwarg))
-        ...     return posarg + kwarg
-        >>> ac.is_outdated(myfunc, 2, 5)
-        True
-        >>> myfunc(2, 5)
-          Calcing 2 + 5 = 7
-        7
-        >>> ac.is_outdated(myfunc, 2, 5)
-        False
+        Example:
+
+            >>> from anycache import AnyCache
+            >>> ac = AnyCache()
+            >>> @ac.anycache()
+            ... def myfunc(posarg, kwarg=3):
+            ...     print("Calcing %r + %r = %r" % (posarg, kwarg, posarg + kwarg))
+            ...     return posarg + kwarg
+            >>> ac.is_outdated(myfunc, 2, 5)
+            True
+            >>> myfunc(2, 5)
+            Calcing 2 + 5 = 7
+            7
+            >>> ac.is_outdated(myfunc, 2, 5)
+            False
         """
         return func.is_outdated(*args, **kwargs)
 
     def remove(self, func, *args, **kwargs):
         """Remove cache data for `func` used with `args` and `kwargs`.
 
-        >>> from anycache import AnyCache
-        >>> ac = AnyCache()
-        >>> @ac.anycache()
-        ... def myfunc(posarg, kwarg=3):
-        ...     print("  Calcing %r + %r = %r" % (posarg, kwarg, posarg + kwarg))
-        ...     return posarg + kwarg
-        >>> myfunc(2, 5)
-          Calcing 2 + 5 = 7
-        7
-        >>> ac.remove(myfunc, 2, 5)
-        >>> myfunc(2, 5)
-          Calcing 2 + 5 = 7
-        7
+            >>> from anycache import AnyCache
+            >>> ac = AnyCache()
+            >>> @ac.anycache()
+            ... def myfunc(posarg, kwarg=3):
+            ...     print("Calcing %r + %r = %r" % (posarg, kwarg, posarg + kwarg))
+            ...     return posarg + kwarg
+            >>> myfunc(2, 5)
+            Calcing 2 + 5 = 7
+            7
+            >>> ac.remove(myfunc, 2, 5)
+            >>> myfunc(2, 5)
+            Calcing 2 + 5 = 7
+            7
 
         Removing non-existing cache entries is not an error:
 
-        >>> ac.remove(myfunc, 2, 5)
-        >>> ac.remove(myfunc, 2, 5)
+            >>> ac.remove(myfunc, 2, 5)
+            >>> ac.remove(myfunc, 2, 5)
         """
         return func.remove(*args, **kwargs)
 
     def get_ident(self, func, *args, **kwargs):
         """Return identification string for `func` used with `args` and `kwargs`.
 
-        >>> from anycache import AnyCache
-        >>> ac = AnyCache()
-        >>> @ac.anycache()
-        ... def myfunc(posarg, kwarg=3):
-        ...     print("  Calcing %r + %r = %r" % (posarg, kwarg, posarg + kwarg))
-        ...     return posarg + kwarg
-        >>> @ac.anycache()
-        ... def otherfunc(posarg, kwarg=3):
-        ...     print("  Calcing %r + %r = %r" % (posarg, kwarg, posarg + kwarg))
-        ...     return posarg + kwarg
-        >>> ac.get_ident(myfunc, 2, 5)
-        '19044d3869955fa79d7f3db8fcdc5af84b3f55c0bdab2b4aee1bb21e1a9856c9'
-        >>> ac.get_ident(myfunc, 2, 6)
-        '1885e09f9898a1f1bd186f052d0e810693faa14b70e7b6b22de61b90c8171427'
-        >>> ac.get_ident(otherfunc, 2, 5)
-        '9b8aea26422999aaa7aed0fdb4d5145fd33b87de20f322cf175997e9b1835158'
+        Example:
+
+            >>> from anycache import AnyCache
+            >>> ac = AnyCache()
+            >>> @ac.anycache()
+            ... def myfunc(posarg, kwarg=3):
+            ...     print("Calcing %r + %r = %r" % (posarg, kwarg, posarg + kwarg))
+            ...     return posarg + kwarg
+            >>> @ac.anycache()
+            ... def otherfunc(posarg, kwarg=3):
+            ...     print("Calcing %r + %r = %r" % (posarg, kwarg, posarg + kwarg))
+            ...     return posarg + kwarg
+            >>> ac.get_ident(myfunc, 2, 5)
+            '19044d3869955fa79d7f3db8fcdc5af84b3f55c0bdab2b4aee1bb21e1a9856c9'
+            >>> ac.get_ident(myfunc, 2, 6)
+            '1885e09f9898a1f1bd186f052d0e810693faa14b70e7b6b22de61b90c8171427'
+            >>> ac.get_ident(otherfunc, 2, 5)
+            '9b8aea26422999aaa7aed0fdb4d5145fd33b87de20f322cf175997e9b1835158'
         """
         return func.get_ident(*args, **kwargs)
 
@@ -335,9 +364,10 @@ class AnyCache:
         ident = self._get_ident(funcinfo)
         ce = _CacheInfo.create_ce_from_ident(self.cachedir, ident)
         self._ensure_cachedir()
+        is_outdated = True
         with ce.lock:
             is_outdated = self.__is_outdated(logger, ce)
-        return is_outdated
+        return is_outdated  # noqa: RET504
 
     def _remove(self, funcinfo):
         logger = logging.getLogger(__name__)
@@ -349,11 +379,10 @@ class AnyCache:
     @staticmethod
     def _get_ident(fi):
         func = fi.func
-        name = "%s.%s(%s, %s)" % (func.__module__, func.__name__, fi.args, fi.kwargs)
+        name = f"{func.__module__!s}.{func.__name__!s}({fi.args!s}, {fi.kwargs!s})"
         h = hashlib.sha256()
-        h.update(_bytes(name))
-        ident = h.hexdigest()
-        return ident
+        h.update(bytes(name, encoding="utf-8"))
+        return h.hexdigest()
 
     def _ensure_cachedir(self):
         try:
@@ -386,10 +415,7 @@ class AnyCache:
             return False
 
         # Determine the datetime of when the cache entry was last touched.
-        last = datetime.datetime.fromtimestamp(
-            timestamp=ce.data.stat().st_mtime,
-            tz=datetime.timezone.utc,
-        )
+        last = datetime.datetime.fromtimestamp(ce.data.stat().st_mtime, tz=datetime.timezone.utc)
 
         # Determine the age of the cache relative to the current time.
         age = datetime.datetime.now(tz=datetime.timezone.utc) - last
@@ -403,7 +429,7 @@ class AnyCache:
             data_mtime = ce.data.stat().st_mtime
             # pylint: disable=broad-exception-caught
             try:
-                with open(str(ce.dep), "r", encoding="utf-8") as depfile:
+                with open(str(ce.dep), encoding="utf-8") as depfile:  # noqa: PTH123
                     return any((pathlib.Path(line.rstrip()).stat().st_mtime > data_mtime) for line in depfile)
             except FileNotFoundError:
                 return True
@@ -415,10 +441,10 @@ class AnyCache:
         valid, result = False, None
         with ce.lock:
             if not self.__is_outdated(logger, ce):
-                with open(str(ce.data), "rb") as cachefile:
+                with open(str(ce.data), "rb") as cachefile:  # noqa: PTH123
                     # pylint: disable=broad-exception-caught
                     try:
-                        result, valid = pickle.load(cachefile), True
+                        result, valid = pickle.load(cachefile), True  # noqa: S301
                         logger.info("READING cache entry '%s'", ce.ident)
                     except Exception as exc:
                         logger.warning("CORRUPT cache entry '%s'. %r", ce.data, exc)
@@ -429,7 +455,7 @@ class AnyCache:
     def __write(logger, ce, result, deps):
         logger.info("WRITING cache entry '%s'", ce.ident)
         # we need to lock the cache for write
-        # writing takes a long time, so we are writing to temporay files, lock and copy over.
+        # writing takes a long time, so we are writing to temporary files, lock and copy over.
         # pylint: disable=broad-exception-caught
         try:
             with tempfile.NamedTemporaryFile("wb", prefix="anycache-", suffix=_CACHE_SUFFIX) as datatmpfile:
@@ -439,7 +465,7 @@ class AnyCache:
                     datatmpfile.flush()
                     # dep
                     for dep in deps:
-                        deptmpfile.write("%s\n" % (dep))
+                        deptmpfile.write(f"{dep}\n")
                     deptmpfile.flush()
                     # copy over
                     with ce.lock:
@@ -454,7 +480,7 @@ class AnyCache:
             cacheinfo = _CacheInfo(cachedir)
             totalsize = cacheinfo.totalsize
             ceis = collections.deque(sorted(cacheinfo.cacheentryinfos, key=lambda info: info.mtime))
-            while (totalsize > maxsize) and (len(ceis) > 2):
+            while (totalsize > maxsize) and (len(ceis) > 2):  # noqa: PLR2004
                 cei = ceis.popleft()
                 totalsize -= cei.size
                 AnyCache.__remove(logger, cei.ce)
@@ -472,7 +498,7 @@ class AnyCache:
 __DEFAULT_CACHE = None
 
 
-def anycache(cachedir=None, maxsize=None, depfilefunc=None):
+def anycache(cachedir: Optional[Path] = None, maxsize: Optional[int] = None, depfilefunc: Optional[Callable] = None):
     """Decorator to cache result of function depending on arguments.
 
     This decorator uses one unlimited global cache within one python run.
@@ -480,10 +506,10 @@ def anycache(cachedir=None, maxsize=None, depfilefunc=None):
     not influence each other.
 
     To preserve the cache result between multiple python runs, use
-    an :any:`AnyCache` instance with a persistent `cachedir`.
+    an `AnyCache` instance with a persistent `cachedir`.
 
     Keyword Args:
-        cachedir: Directory for cached python objects. :any:`AnyCache`
+        cachedir: Directory for cached python objects. `AnyCache`
                   instances on the same `cachedir` share the same cache.
         maxsize: Maximum cache size in bytes.
                  `None` does not limit the cache size.
@@ -495,16 +521,18 @@ def anycache(cachedir=None, maxsize=None, depfilefunc=None):
                  size.
         depfilefunc: Dependency file function (see example below)
 
-    >>> from anycache import anycache
-    >>> @anycache()
-    ... def myfunc(posarg, kwarg=3):
-    ...     print("  Calcing %r + %r = %r" % (posarg, kwarg, posarg + kwarg))
-    ...     return posarg + kwarg
-    >>> myfunc(2, 5)
-      Calcing 2 + 5 = 7
-    7
-    >>> myfunc(2, 5)
-    7
+    Example:
+
+        >>> from anycache import anycache
+        >>> @anycache()
+        ... def myfunc(posarg, kwarg=3):
+        ...     print("Calcing %r + %r = %r" % (posarg, kwarg, posarg + kwarg))
+        ...     return posarg + kwarg
+        >>> myfunc(2, 5)
+        Calcing 2 + 5 = 7
+        7
+        >>> myfunc(2, 5)
+        7
 
     File I/O is not tracked by the decorator.
     Instead a function needs to be implemented, which returns the paths
@@ -512,17 +540,17 @@ def anycache(cachedir=None, maxsize=None, depfilefunc=None):
     The `depfilefunc` is called with the function result and all arguments.
     The following example, depends on the path of the source code itself:
 
-    >>> def mydepfilefunc(result, posarg, kwarg=3):
-    ...     print("  Deps of %r + %r = %r" % (posarg, kwarg, result))
-    ...     return [__file__]
-    >>> @anycache(depfilefunc=mydepfilefunc)
-    ... def myfunc(posarg, kwarg=3):
-    ...     print("  Calcing %r + %r = %r" % (posarg, kwarg, posarg + kwarg))
-    ...     return posarg + kwarg
-    >>> myfunc(2, 7)
-      Calcing 2 + 7 = 9
-      Deps of 2 + 7 = 9
-    9
+        >>> def mydepfilefunc(result, posarg, kwarg=3):
+        ...     print("Deps of %r + %r = %r" % (posarg, kwarg, result))
+        ...     return [__file__]
+        >>> @anycache(depfilefunc=mydepfilefunc)
+        ... def myfunc(posarg, kwarg=3):
+        ...     print("Calcing %r + %r = %r" % (posarg, kwarg, posarg + kwarg))
+        ...     return posarg + kwarg
+        >>> myfunc(2, 7)
+        Calcing 2 + 7 = 9
+        Deps of 2 + 7 = 9
+        9
     """
     if (cachedir is not None) or (maxsize is not None):
         ac = AnyCache(cachedir=cachedir, maxsize=maxsize)
@@ -533,9 +561,9 @@ def anycache(cachedir=None, maxsize=None, depfilefunc=None):
 
 
 def get_defaultcache():
-    """Return unlimited default :any:`AnyCache` instance."""
+    """Return unlimited default `AnyCache` instance."""
     # pylint: disable=global-statement
-    global __DEFAULT_CACHE
+    global __DEFAULT_CACHE  # noqa: PLW0603
     if __DEFAULT_CACHE is None:
         __DEFAULT_CACHE = AnyCache()
     return __DEFAULT_CACHE

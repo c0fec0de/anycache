@@ -1,38 +1,74 @@
+_GREEN:=\033[0;32m
+_BLUE:=\033[0;34m
+_BOLD:=\033[1m
+_NORM:=\033[0m
+ENV:=uv run --frozen --
+
+
 .PHONY: help
-help:
-	@echo "Targets:"
-	@echo "  help:  	  Show this page"
-	@echo ""
-	@echo "  all:         pre-commit + test + doc"
-	@echo ""
-	@echo "  pre-commit:  Run pre-commit fixes and checks"
-	@echo "  test:        Run pytest"
-	@echo "  doc:         Build Documentation"
-	@echo ""
-	@echo "  clean:       Remove all Temporary Files (from .gitignore)"
-	@echo ""
+help:  ## [DEFAULT] Show this help
+	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?##"}; {printf "${_BLUE}${_BOLD}%-10s${_NORM} %s\n", $$1, $$2}'
+
 
 .PHONY: all
-all: pre-commit test doc
+all:  ## Do everything taggged with [ALL] below
+	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | grep "\[ALL\]" | grep -v "^all" | awk 'BEGIN {FS = ":.*?##"}; {printf "%s ", $$1}' | xargs make
+	@echo "\n    ${_GREEN}${_BOLD}PASS${_NORM}\n"
+
 
 .PHONY: pre-commit
-pre-commit: .venv/.sync
-	uv run pre-commit run --all-files
+pre-commit: .venv/.valid .git/hooks/pre-commit ## [ALL] Run 'pre-commit' on all files
+	${ENV} pre-commit run --all-files
+
+.git/hooks/pre-commit: .venv/.valid
+	${ENV} pre-commit install --install-hooks
+
 
 .PHONY: test
-test: .venv/.sync
-	uv run coverage run --source=anycache --branch -m pytest --doctest-glob=docs/*.rst --doctest-modules --ignore-glob=tests/testdata* --ignore=docs/conf.py --log-level=DEBUG -vv --junitxml=report.xml
-	uv run coverage report
-	uv run coverage html
-	uv run coverage xml
+test: .venv/.valid ## [ALL] Run Unittests via 'pytest' with {PYTEST_OPTIONS}
+	${ENV} pytest -vv ${PYTEST_OPTIONS}
+	@echo  "See coverage report:\n\n    file://${PWD}/htmlcov/index.html\n"
+
+
+.PHONY: checktypes
+checktypes: .venv/.valid ## [ALL] Run Type-Checking via 'mypy'
+	${ENV} mypy .
+
 
 .PHONY: doc
-doc: .venv/.sync
-	uv run make html -C docs
+doc: .venv/.valid ## [ALL] Build Documentation via 'mkdocs'
+	${ENV} mkdocs build --strict
+
+
+.PHONY: doc-serve
+doc-serve: .venv/.valid ## Start Local Documentation Server via 'mkdocs'
+	${ENV} mkdocs serve --no-strict
+
+
+.PHONY: code
+code:  ## Start Visual Studio Code
+	code anycache.code-workspace &
+
 
 .PHONY: clean
-clean:
-	git clean -Xdf
+clean:  ## Remove everything mentioned by '.gitignore' file
+	git clean -xdf
 
-.venv/.sync:
-	uv sync --dev
+
+.PHONY: distclean
+distclean:  ## Remove everything mentioned by '.gitignore' file and UNTRACKED files
+	git clean -xdf
+
+
+.PHONY: shell
+shell:  ## Open a project specific SHELL. For leaving use 'exit'.
+	${ENV} ${SHELL}
+
+
+# Helper
+.venv/.valid: pyproject.toml uv.lock
+	uv sync --frozen
+	@touch $@
+
+uv.lock:
+	uv lock

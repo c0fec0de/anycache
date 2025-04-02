@@ -1,0 +1,13 @@
+{
+    "cookiecutter": {
+    "_checkout": null,
+    "_output_dir": "/Users/c0fec0de/projects",
+    "_repo_dir": "/Users/c0fec0de/.cookiecutters/python-template",
+    "_template": "gh:nbiotcloud/python-template",
+    "name": "anycache",
+    "snake_name": "anycache",
+    "title": "Cache any python object to file using improved pickling",
+    "user": "c0fec0de",
+    "year": "2017"
+}
+}

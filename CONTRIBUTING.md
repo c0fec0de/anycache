@@ -1,34 +1,56 @@
-# Contribute
+# CONTRIBUTING
 
-## Testing
+Please follow github workflow. Create a ticket and/or branch. Create a pull-request.
 
-### Create Environment
+## Local Development
 
-Run these commands just the first time:
+### Installation
+
+Please install these tools:
+
+* [`uv` Installation](https://docs.astral.sh/uv/getting-started/installation/)
+* [`make`](https://www.gnu.org/software/make/)
+* [`git`](https://git-scm.com/)
+* [Visual Studio Code](https://code.visualstudio.com/)
+
+
+### Editor
+
+Start Visual Studio Code:
 
 ```bash
-# Ensure python3 is installed
-python3 -m venv .venv
-source .venv/bin/activate
-pip install uv
+make code
 ```
 
-### Enter Environment
+### Testing
 
-Run this command once you open a new shell:
-
-```bash
-source .venv/bin/activate
-```
-
-### Test Your Changes
+Run auto-formatting, linting, tests and documentation build:
 
 ```bash
 make all
 ```
 
-### Release
+See `make help` for any further details.
 
-Create release via
 
-    https://github.com/c0fec0de/anycache/releases/new
+## Project Structure
+
+The project contains these files and directories:
+
+| File/Directory | Description |
+|---|---|
+| `src/` | Python Package Sources - the files this is all about |
+| `pyproject.toml` | Python Package Meta File. Also contains all tool settings |
+| `.gitignore` | Lists of files and directories ignored by version control system |
+| `.github/` | Github Settings |
+| `.readthedocs.yaml` | Documentation Server Configuration |
+| `.pre-commit-config.yaml` | Pre-Commit Check Configuration |
+| `uv.lock` | File with resolved python package dependencies |
+
+Next to that, there are some temporary files ignored by version control system.
+
+| File/Directory | Description |
+|---|---|
+| `htmlcov/` | Test Execution Code Coverage Report in HTML format |
+| `report.xml` | Test Execution Report |
+| `.venv` | Virtual Environments |
