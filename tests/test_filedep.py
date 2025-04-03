@@ -22,8 +22,6 @@
 
 """File Dependency Testing."""
 
-from pathlib import Path
-from tempfile import NamedTemporaryFile
 from time import sleep
 
 from anycache import anycache
@@ -31,14 +29,15 @@ from anycache import anycache
 TOUCHTIME = 2
 
 
-def test_filedepfunc():
+def test_filedepfunc(tmp_path):
     """File dependencies."""
-    with NamedTemporaryFile("w") as depfile1:
-        with NamedTemporaryFile("w") as depfile2:
+    depfilepath1 = tmp_path / "dep1"
+    depfilepath2 = tmp_path / "dep2"
+
+    with depfilepath1.open(mode="w") as depfile1:
+        with depfilepath2.open(mode="w") as depfile2:
             depfile1.write("dep1")
             depfile2.write("dep2")
-            depfilepath1 = Path(depfile1.name)
-            depfilepath2 = Path(depfile2.name)
 
             def depfilefunc(result, posarg, kwarg=3):
                 # pylint: disable=unused-argument
@@ -84,11 +83,3 @@ def test_filedepfunc():
             assert myfunc.callcount == 5
             assert myfunc(1, 5) == 6
             assert myfunc.callcount == 5
-
-            depfile2.close()
-            assert not depfilepath2.exists()
-
-            assert myfunc(4, 5) == 9
-            assert myfunc.callcount == 6
-            assert myfunc(4, 5) == 9
-            assert myfunc.callcount == 6

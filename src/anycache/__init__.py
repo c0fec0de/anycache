@@ -457,20 +457,25 @@ class AnyCache:
         # we need to lock the cache for write
         # writing takes a long time, so we are writing to temporary files, lock and copy over.
         # pylint: disable=broad-exception-caught
+
+        # Note: NamedTemporaryFile does not work properly on Windows. So we use a temp dir
+
         try:
-            with tempfile.NamedTemporaryFile("wb", prefix="anycache-", suffix=_CACHE_SUFFIX) as datatmpfile:
-                with tempfile.NamedTemporaryFile("w", prefix="anycache-", suffix=_DEP_SUFFIX) as deptmpfile:
-                    # data
-                    pickle.dump(result, datatmpfile)
-                    datatmpfile.flush()
-                    # dep
-                    for dep in deps:
-                        deptmpfile.write(f"{dep}\n")
-                    deptmpfile.flush()
-                    # copy over
-                    with ce.lock:
-                        shutil.copyfile(datatmpfile.name, str(ce.data))
-                        shutil.copyfile(deptmpfile.name, str(ce.dep))
+            with tempfile.TemporaryDirectory(prefix="anycache-") as tmpdir:
+                tmp_path = Path(tmpdir)
+                data_path = tmp_path / "data"
+                dep_path = tmp_path / "dep"
+                with data_path.open(mode="wb") as datatmpfile:
+                    with dep_path.open(mode="w") as deptmpfile:
+                        # data
+                        pickle.dump(result, datatmpfile)
+                        # dep
+                        for dep in deps:
+                            deptmpfile.write(f"{dep}\n")
+                # copy over
+                with ce.lock:
+                    shutil.copyfile(data_path, str(ce.data))
+                    shutil.copyfile(dep_path, str(ce.dep))
         except Exception as exc:  # pragma: no cover
             logger.warning("FAILED cache write '%s'. %r", ce.data, exc)
 
