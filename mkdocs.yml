@@ -1,0 +1,75 @@
+site_name: "ANYCACHE"
+site_description: "Cache any python object to file using improved pickling"
+site_url: https://anycache.readthedocs.io/en
+repo_url: https://github.com/c0fec0de/anycache
+copyright: Copyright (c) 2017-2025 c0fec0de
+
+theme:
+  name: material
+  palette:
+    - media: "(prefes-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefes-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.footer
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - content.code.copy
+    - content.code.select
+    - content.code.annotate
+
+nav:
+  - Home:
+      - Welcome to ANYCACHE: index.md
+      - Contributing: contributing.md
+  - API: api.md
+
+plugins:
+  - search
+  - include-markdown
+  - literate-nav:
+      nav_file: README.md
+      implicit_index: true
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          options:
+            docstring_options:
+              ignore_init_summary: true
+            summary: true
+            show_source: false
+            unwrap_annotated: true
+            members_order: source
+            show_docstring_parameters: true
+            show_docstring_other_parameters: true
+            separate_signature: true
+            signature_crossrefs: true
+            show_signature_annotations: false
+            show_symbol_type_heading: true
+            # preload_modules: [pydantic]
+            inherited_members: false
+          import:
+            - https://docs.python.org/3/objects.inv
+
+markdown_extensions:
+  - attr_list
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+
+watch:
+  - src
+  - CONTRIBUTING.md

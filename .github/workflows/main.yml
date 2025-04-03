@@ -1,66 +1,64 @@
-name: test
+name: main
 on: [push, pull_request, release]
 jobs:
-  build:
-    name: Continuous Integration
-    runs-on: ubuntu-latest
+  test:
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        os:
+          - "ubuntu-latest"
+          - "macos-latest"
+          - "windows-latest"
         python-version:
-          - "3.8"
-          - "3.9"
           - "3.10"
           - "3.11"
           - "3.12"
           - "3.13"
     steps:
       - uses: actions/checkout@v4
-      - name: Install uv and set the python version
+      - name: Set up Python ${{ matrix.python-version }}
         uses: astral-sh/setup-uv@v5
         with:
+          version: "0.6.9"
           python-version: ${{ matrix.python-version }}
-          version: "0.5.15"
           enable-cache: true
           cache-dependency-glob: "uv.lock"
-      - name: all
+      - name: Run all
         run: make all
       - name: Upload coverage data to coveralls.io
-        run: |
-          pip3 install --upgrade coveralls
-          coveralls --service=github
+        run: uv run --frozen -- coveralls --service=github
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COVERALLS_FLAG_NAME: ${{ matrix.test-name }}
           COVERALLS_PARALLEL: true
+
   coveralls:
     name: Indicate completion to coveralls.io
-    needs: build
+    needs: test
     runs-on: ubuntu-latest
-    container: python:3-slim
     steps:
-      - name: Finished
-        run: |
-          pip3 install --upgrade coveralls
-          coveralls --service=github --finish
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.6.9"
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+      - name: Upload coverage data to coveralls.io
+        run: uv run --frozen -- coveralls --service=github --finish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   publish:
     if: github.event_name == 'push' && github.ref_type == 'tag'
-    name: Upload release to PyPI
     needs: coveralls
+    name: upload release to PyPI
     runs-on: ubuntu-latest
     permissions:
       id-token: write
     steps:
       - uses: actions/checkout@v4
-      - name: Install uv and set the python version
-        uses: astral-sh/setup-uv@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-          version: "0.5.15"
-          enable-cache: true
-          cache-dependency-glob: "uv.lock"
-      - name: build
-        run: uv build
-      - name: publish
-        run: uv publish
+      - uses: pdm-project/setup-pdm@v4
+      - name: Publish package distributions to PyPI
+        run: pdm publish
